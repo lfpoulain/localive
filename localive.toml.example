@@ -42,11 +42,13 @@ gpu_layers = 99      # charge toutes les couches de d3-mini sur le GPU
 timeout_ms = 0       # délai automatique selon le temps de calcul sur cette machine
 
 [llm]                # le cerveau (ou tout serveur chat-completions : llm.url)
+lmstudio_reasoning = "auto"  # auto, off, on, low, medium ou high selon le modèle
 model = "qwen"       # nom publié sur /v1/models
 temperature = 0.2
 max_tokens = 400
 
 [brain]              # llama-server lancé par Localive
+reasoning_level = "off"  # Qwen3.5 : off, low, medium ou high
 # Le modèle de raisonnement : n'importe quel GGUF de models/ (liste déroulante de l'admin).
 model = "models/Qwen3-4B-Instruct-2507/Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
 llama_dir = ".runtime/llama/b11960-vulkan"

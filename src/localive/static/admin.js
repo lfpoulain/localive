@@ -565,7 +565,10 @@ function bindExternalModels(group) {
   refresh();
 }
 
+let modelLookup = 0;
+
 async function refreshExternalModels(byKey) {
+  const lookup = ++modelLookup;
   const select = view.querySelector('[data-key="brain.external_model"]');
   const status = $("#external-models-status");
   if (!select || !status) return;
@@ -581,6 +584,7 @@ async function refreshExternalModels(byKey) {
       method: "POST",
       body: JSON.stringify({ backend, url: valueOf(byKey["brain.external_url"]) }),
     });
+    if (lookup !== modelLookup || !select.isConnected) return;
     if (result.error) {
       status.textContent = result.error;
       return;
@@ -592,6 +596,21 @@ async function refreshExternalModels(byKey) {
     if (!current && result.models.length) {
       select.value = result.models[0];
       select.dispatchEvent(new Event("input"));
+    }
+    const effort = view.querySelector('[data-key="llm.lmstudio_reasoning"]');
+    if (effort && backend === "lmstudio") {
+      const syncLevels = () => {
+        const supported = result.reasoning?.[select.value];
+        for (const option of effort.options) {
+          option.disabled = Array.isArray(supported) && option.value !== "auto" && !supported.includes(option.value);
+        }
+        if (effort.selectedOptions[0]?.disabled) {
+          effort.value = "auto";
+          effort.dispatchEvent(new Event("change"));
+        }
+      };
+      select.onchange = syncLevels;
+      syncLevels();
     }
     status.textContent = result.models.length
       ? `${result.models.length} modèle${result.models.length > 1 ? "s" : ""} sur ${result.url}.`

@@ -18,7 +18,14 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from .catalog import QWEN_4B_MTP
-from .config import BRAIN_SERVERS, GOODBYE_MODES, Config, merge
+from .config import (
+    BRAIN_SERVERS,
+    GOODBYE_MODES,
+    LMSTUDIO_REASONING,
+    REASONING_BUDGETS,
+    Config,
+    merge,
+)
 
 
 @dataclass(frozen=True)
@@ -199,6 +206,14 @@ SECTIONS: tuple[Section, ...] = (
                 "plus juste et le plus rapide dans nos mesures ; un modèle plus gros demande plus "
                 "de mémoire vidéo. Le décideur garde Qwen3-4B (page Interruptions).",
                 restart=True, dynamic="gguf", only="brain.backend=localive"),
+        Setting("brain.reasoning_level", "Niveau de réflexion",
+                "Avec Qwen3.5, réfléchir davantage peut retarder le premier son. "
+                "Le modèle par défaut Qwen3-4B-Instruct-2507 répond directement.",
+                tuple(REASONING_BUDGETS), only="brain.backend=localive"),
+        Setting("llm.lmstudio_reasoning", "Niveau de réflexion de LM Studio",
+                "Le modèle indique les niveaux disponibles. Désactivé privilégie le premier son. "
+                "Le choix s’applique dès la prochaine demande.",
+                LMSTUDIO_REASONING, only="brain.backend=lmstudio"),
         Setting("llm.temperature", "Créativité",
                 "Bas (0,2) : réponses précises et stables. Plus haut : plus variées.", minimum=0,
                 maximum=1.5, step=0.05),
@@ -343,6 +358,16 @@ def gguf_models(config: Config) -> list[str]:
 
 def choices_for(setting: Setting, config: Config) -> tuple[list[str], dict[str, str]]:
     """Allowed values and their labels (models on disk are listed when the page asks)."""
+    if setting.key == "llm.lmstudio_reasoning":
+        return list(setting.choices), {"auto": "Réglage du modèle", "off": "Désactivé",
+                                       "on": "Activé", "low": "Faible", "medium": "Moyen",
+                                       "high": "Élevé"}
+    if setting.key == "brain.reasoning_level":
+        labels = {"off": "Désactivé", "low": "Faible", "medium": "Moyen", "high": "Élevé"}
+        return list(setting.choices), {
+            level: f"{labels[level]} ({limit} jetons)" if limit else labels[level]
+            for level, limit in REASONING_BUDGETS.items()
+        }
     if not setting.dynamic or setting.dynamic == "external_models":
         return list(setting.choices), {}  # external models: listed by the page
     current = _get(config, setting.key)

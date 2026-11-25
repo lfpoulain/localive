@@ -235,6 +235,17 @@ def same_origin(request: web.Request) -> bool:
     return bool(parsed.netloc) and parsed.netloc.lower() == request.host.lower()
 
 
+def lmstudio_reasoning_options(catalogue: dict) -> dict[str, list[str]]:
+    options = {}
+    for model in catalogue.get("models", []):
+        capabilities = model.get("capabilities") or {}
+        levels = (capabilities.get("reasoning") or {}).get("allowed_options") or []
+        names = [model.get("key"), *(i.get("id") for i in model.get("loaded_instances", []))]
+        for name in filter(None, names):
+            options[name] = levels
+    return options
+
+
 def _error(status: int, code: str, message: str) -> web.Response:
     return web.json_response(
         {"error": {"type": "invalid_request_error", "code": code, "message": message}},
@@ -308,7 +319,7 @@ class App:
                 config=config,
                 http=http,
                 transcriber=self._transcriber,
-                chat=ChatClient(http, config.llm),
+                chat=ChatClient(http, config.llm, lmstudio=config.brain.backend == "lmstudio"),
                 tts=synthesizer,
                 search_manager=self.searxng,
                 request_router=self.request_router,
@@ -690,6 +701,7 @@ class App:
         if (backend, url) == (saved_backend, saved_url.rstrip("/")):
             key = self.config.file_values.get("llm", {}).get("api_key", "")
         headers = {"Authorization": f"Bearer {key}"} if key else {}
+        reasoning = {}
         try:
             async with aiohttp.ClientSession() as http, http.get(
                 url + "/models", headers=headers, allow_redirects=False,
@@ -699,6 +711,16 @@ class App:
                     return web.json_response({"url": url, "models": [], "error":
                         f"{names[backend]} a répondu HTTP {response.status} sur {url}."})
                 data = await response.json(content_type=None)
+                if backend == "lmstudio" and url.endswith("/v1"):
+                    # Older LM Studio servers expose /v1/models only.
+                    with contextlib.suppress(aiohttp.ClientError, TimeoutError, ValueError,
+                                             AttributeError, TypeError):
+                        native_url = url.removesuffix("/v1") + "/api/v1/models"
+                        async with http.get(native_url, headers=headers, allow_redirects=False,
+                                            timeout=aiohttp.ClientTimeout(total=3)) as native:
+                            if native.status == 200:
+                                catalogue = await native.json()
+                                reasoning = lmstudio_reasoning_options(catalogue)
             models = sorted({str(m["id"]) for m in data.get("data", []) if m.get("id")})
         except (aiohttp.ClientError, TimeoutError, ValueError, AttributeError, KeyError,
                 TypeError) as exc:  # fmt: skip
@@ -708,7 +730,7 @@ class App:
                 hint = "" if backend == "openai" else " : lancez-le et activez son serveur"
                 error = f"{names[backend]} ne répond pas sur {url}{hint} ({exc})."
             return web.json_response({"url": url, "models": [], "error": error})
-        return web.json_response({"url": url, "models": models})
+        return web.json_response({"url": url, "models": models, "reasoning": reasoning})
 
     async def retry_search(self, _request: web.Request) -> web.Response:
         self.searxng.start(self._http, retry=True)

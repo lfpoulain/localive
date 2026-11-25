@@ -140,6 +140,7 @@ class LlmConfig:
     api_key: str = ""
     temperature: float = 0.2
     max_tokens: int = 400
+    lmstudio_reasoning: str = "auto"
     history_turns: int = 12
     tool_timeout_s: float = 60.0
     # Set by finalize() for an Ollama / LM Studio brain: the model id that server expects
@@ -183,6 +184,9 @@ BRAIN_SERVERS = {
     "openai": "",  # any other chat-completions server: its address must be given
 }
 
+REASONING_BUDGETS = {"off": 0, "low": 32, "medium": 96, "high": 256}
+LMSTUDIO_REASONING = ("auto", "off", "on", "low", "medium", "high")
+
 
 @dataclass
 class BrainConfig:
@@ -193,11 +197,18 @@ class BrainConfig:
     managed: bool = True  # start/stop llama-server automatically
     llama_dir: str = VULKAN_RUNTIME
     model: str = DEFAULT_BRAIN
+    reasoning_level: str = "off"
     port: int = 8081
     context: int = 24576  # Cornelius sends long instructions and ~20 tool schemas
     gpu_layers: int = 99
     startup_timeout: float = 180.0
     extra_args: str = ""  # additional llama-server options for the main brain only
+
+    @property
+    def reasoning_budget(self) -> int:
+        if self.backend != "localive" or not self.managed or self.model == DEFAULT_BRAIN:
+            return 0
+        return REASONING_BUDGETS[self.reasoning_level]
 
 
 @dataclass
@@ -296,6 +307,10 @@ class Config:
             raise ValueError("search.engine must be 'searxng' or 'off'")
         if self.brain.backend not in {"localive", *BRAIN_SERVERS}:
             raise ValueError("brain.backend must be localive, ollama, lmstudio or openai")
+        if self.brain.reasoning_level not in REASONING_BUDGETS:
+            raise ValueError("brain.reasoning_level doit valoir off, low, medium ou high.")
+        if self.llm.lmstudio_reasoning not in LMSTUDIO_REASONING:
+            raise ValueError("llm.lmstudio_reasoning doit valoir " + ", ".join(LMSTUDIO_REASONING))
         if self.brain.backend != "localive":
             self.brain.managed = False
             url = self.brain.external_url or BRAIN_SERVERS[self.brain.backend]

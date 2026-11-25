@@ -92,12 +92,66 @@ class Recording(Http):
         return Response(self.events)
 
 
+@pytest.mark.parametrize("level,expected", [
+    ("auto", None), ("off", "none"), ("on", "medium"), ("low", "low"),
+    ("medium", "medium"), ("high", "high"),
+])
+async def test_lmstudio_reasoning_is_sent_with_tools_only_to_lmstudio(level, expected):
+    http = Recording([delta("91", finish="stop")])
+    config = LlmConfig(lmstudio_reasoning=level)
+    tools = [{"type": "function", "function": {"name": "clock", "parameters": {"type": "object"}}}]
+    for lmstudio in (True, False):
+        client = ChatClient(http, config, lmstudio=lmstudio)
+        assert [t async for t in client.stream([], tools, Completion())] == ["91"]
+        assert http.body.get("reasoning_effort") == (expected if lmstudio else None)
+        assert http.body["tools"] == tools
+
+
+async def test_lmstudio_recovers_only_a_turn_exhausted_in_private_reasoning():
+    exhausted = [{"choices": [{"delta": {"reasoning_content": "calcul"},
+                               "finish_reason": "length"}]}]
+    attempts = []
+
+    class Upstream:
+        def post(self, url, *, json, **kwargs):
+            attempts.append(json.get("reasoning_effort"))
+            return Response(exhausted if len(attempts) == 1 else [delta("91", finish="stop")])
+
+    result = Completion()
+    client = ChatClient(Upstream(), LlmConfig(lmstudio_reasoning="low"), lmstudio=True)
+    assert [t async for t in client.stream([], None, result)] == ["91"]
+    assert result.text == "91" and not result.truncated
+    assert attempts == ["low", "none"]
+    attempts.clear()
+    client.config.lmstudio_reasoning = "off"
+    with pytest.raises(LlmError, match="limite"):
+        [t async for t in client.stream([], None, Completion())]
+    assert attempts == ["none"]
+    attempts.clear()
+    client.config.lmstudio_reasoning = "high"
+    assert not [t async for t in client.stream([], None, Completion(), max_tokens=1)]
+    assert attempts == ["high"]
+
+
 @pytest.mark.parametrize("no_thinking", [False, True])
 async def test_external_servers_are_asked_not_to_think(no_thinking):
     http = Recording([delta("Oui.", finish="stop"), "[DONE]"])
     client = ChatClient(http, LlmConfig(no_thinking=no_thinking))
     [piece async for piece in client.stream([], None, Completion())]
     assert ("reasoning_effort" in http.body) is no_thinking
+
+
+@pytest.mark.parametrize("budget", [0, 32, 96, 256])
+async def test_reasoning_budget_preserves_room_for_the_spoken_response(budget):
+    http = Recording([{"choices": [{"delta": {"reasoning_content": "Calcul interne"}}]},
+                      delta("221", finish="stop"), "[DONE]"])
+    client = ChatClient(http, LlmConfig(max_tokens=64))
+    result = Completion()
+    spoken = [piece async for piece in client.stream([], None, result, reasoning_budget=budget)]
+    assert "".join(spoken) == result.text == "221"
+    assert http.body["max_tokens"] == 64 + budget
+    assert http.body.get("reasoning_budget_tokens", 0) == budget
+    assert http.body.get("chat_template_kwargs") == ({"enable_thinking": True} if budget else None)
 
 
 async def test_a_reply_spent_thinking_is_reported(caplog):

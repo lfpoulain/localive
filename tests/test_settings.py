@@ -24,6 +24,34 @@ def test_schema_lists_values_and_defaults(config):
     assert entries["llm.temperature"]["type"] == "float"
 
 
+def test_live_reasoning_level_is_persisted_and_scoped_to_the_local_brain(config):
+    key = "brain.reasoning_level"
+    entry = next(s for g in settings.schema(config)["groups"] for s in g["settings"]
+                 if s["key"] == key)
+    assert entry["default"] == "off" and entry["only"] == "brain.backend=localive"
+    assert entry["choice_labels"]["medium"] == "Moyen (96 jetons)"
+    assert settings.apply(config, {key: "medium"}) == {"applied": [key], "restart_required": []}
+    assert load_config(config.file).brain.reasoning_level == "medium"
+    assert config.brain.reasoning_budget == 0  # bundled non-thinking model
+    config.brain.model = "Qwen3.5-4B.gguf"
+    assert config.brain.reasoning_budget == 96
+    config.brain.backend = "ollama"
+    assert config.brain.reasoning_budget == 0
+    config.brain.backend = "localive"
+    config.brain.managed = False
+    assert config.brain.reasoning_budget == 0
+    config.brain.reasoning_level = "unknown"
+    with pytest.raises(ValueError, match=key):
+        config.finalize()
+
+
+def test_lmstudio_effort_applies_live_and_survives_restart(config):
+    key = "llm.lmstudio_reasoning"
+    assert settings.BY_KEY[key].only == "brain.backend=lmstudio"
+    assert settings.apply(config, {key: "off"}) == {"applied": [key], "restart_required": []}
+    assert config.llm.lmstudio_reasoning == load_config(config.file).llm.lmstudio_reasoning == "off"
+
+
 def test_device_vocabulary_is_opt_in_and_persisted(config):
     assert config.asr.device_vocabulary is False
     assert settings.apply(config, {"asr.device_vocabulary": True}) == {

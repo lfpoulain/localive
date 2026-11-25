@@ -273,13 +273,21 @@ async def test_external_brain_models_are_listed(client):
     async def models(_request):
         return web.json_response({"data": [{"id": "qwen3:8b"}, {"id": "gemma3:4b"}]})
 
+    async def native(_request):
+        return web.json_response({"models": [{
+            "key": "qwen", "loaded_instances": [{"id": "qwen3:8b"}],
+            "capabilities": {"reasoning": {"allowed_options": ["off", "on"]}},
+        }]})
+
     upstream = web.Application()
     upstream.router.add_get("/v1/models", models)
+    upstream.router.add_get("/api/v1/models", native)
     async with TestClient(TestServer(upstream)) as fake:
         url = str(fake.make_url("/v1"))
         result = await (await client.post("/api/brain/models",
                                           json={"backend": "lmstudio", "url": url})).json()
         assert result["models"] == ["gemma3:4b", "qwen3:8b"] and "error" not in result
+        assert result["reasoning"]["qwen3:8b"] == ["off", "on"]
     down = await (await client.post("/api/brain/models", json={
         "backend": "ollama", "url": "http://127.0.0.1:9/v1"})).json()
     assert down["models"] == [] and "Ollama ne répond pas" in down["error"]

@@ -87,6 +87,32 @@ test("the hangup method is shown when enabled and labels the local model", async
   assert.match(view.innerHTML, /Décideur local \(d3-mini\)/);
 });
 
+test("LM Studio reasoning follows the capabilities of the selected model", async () => {
+  const { context, view } = await page("#home");
+  const select = { value: "graded", isConnected: true };
+  const effort = {
+    value: "high",
+    options: ["auto", "off", "on", "low", "medium", "high"].map(value => ({ value })),
+    get selectedOptions() { return this.options.filter(o => o.value === this.value); },
+    dispatchEvent() {},
+  };
+  view.querySelector = selector => selector.includes("external_model") ? select : effort;
+  context.fetch = async () => ({ ok: true, json: async () => ({
+    models: ["graded", "toggle"], reasoning: { graded: ["low", "medium", "high"], toggle: ["off", "on"] },
+  }) });
+  context.Event = Event;
+  await vm.runInContext(`refreshExternalModels({
+    "brain.backend": {value: "lmstudio"}, "brain.external_url": {value: ""},
+    "brain.external_model": {value: "graded"}
+  })`, context);
+  const choices = () => effort.options.filter(o => !o.disabled).map(o => o.value);
+  assert.deepEqual(choices(), ["auto", "low", "medium", "high"]);
+  select.value = "toggle";
+  select.onchange();
+  assert.deepEqual(choices(), ["auto", "off", "on"]);
+  assert.equal(effort.value, "auto");
+});
+
 test("mobile menu closes on Escape and a cancelled navigation keeps the draft URL", async () => {
   const { context, listeners } = await page("#brain");
   const node = context.document.querySelector;

@@ -1699,6 +1699,13 @@ class LiveSession:
             raise
         except (LlmError, TtsError) as exc:
             await self.warn("engine_unavailable", str(exc))
+            if isinstance(exc, LlmError) and self._mic_held and not self._reply_sentences:
+                notice = "Je n’ai pas pu obtenir de réponse du modèle."
+                self._reply_written = True
+                if self._reply_turn is not None:
+                    self._reply_turn.messages.append({"role": "assistant", "content": notice})
+                self._reply_sentences.append(self._enqueue(notice, self._reply_id))
+                await self._synthesis_done(self._reply_sentences)
         except Exception as exc:  # noqa: BLE001
             log.exception("Reply failed")
             await self.warn("reply_failed", str(exc))
@@ -1863,6 +1870,7 @@ class LiveSession:
         budget = (
             self.config.context_for(self.brain)
             - self.config.llm.max_tokens
+            - self.config.brain.reasoning_budget
             - CONTEXT_MARGIN_TOKENS
             - estimate_tokens(system["content"], schemas, reserve)
         )
@@ -2042,7 +2050,8 @@ class LiveSession:
                 prompt.extend(messages[request_end:])
             model_request = time.monotonic()
             stream = self.s.chat.stream(
-                prompt, tools, completion, model=self.brain, url=self.brain_url
+                prompt, tools, completion, model=self.brain, url=self.brain_url,
+                reasoning_budget=self.config.brain.reasoning_budget,
             )
             async for delta in stream:
                 self._mark_model_output(model_request)
@@ -2072,6 +2081,8 @@ class LiveSession:
                             and not mine and not self._is_local(call.name) and user_text
                             and not system_note):
                         turn.summary_call_id = call.id
+            if not completion.tool_calls and self._mic_held and not mine:
+                raise LlmError("Le modèle a terminé sans réponse vocale ni appel d’outil.")
             assistant: dict[str, Any] = {"role": "assistant", "content": completion.text or ""}
             if completion.tool_calls:
                 assistant["tool_calls"] = [
@@ -2096,7 +2107,7 @@ class LiveSession:
             remote = [c for c in allowed if not self._is_local(c.name)]
             if (local and not self._reply_spoke and "notice_id" not in self._turn
                     and not completion.text.strip()):
-                say(SEARCH_NOTICE)
+                self._turn["notice_id"] = self._enqueue(SEARCH_NOTICE, reply, wait_notice=True)
             outputs = {c.id: '{"error":"Outil indisponible pour cet appel."}'
                        for c in completion.tool_calls if c.name not in offered}
             if outputs and not thanks:
@@ -2264,6 +2275,8 @@ class LiveSession:
 
     def _track_sentence_audio(self, sid: int, count: int, end_at: float) -> None:
         if (sentence := self._sentences.get(sid)) is not None:
+            if self._mic_held and sentence.reply == self._reply_id and not sentence.wait_notice:
+                self._hold_mic(False)
             sentence.sent_samples += count
             sentence.last_sample_at = end_at
 
@@ -2312,7 +2325,6 @@ class LiveSession:
                             ready_at = self._mark("first_audio")
                             self._log_first_audio(sentence.reply, ready_at)
                             self._reply_spoke = True
-                            self._hold_mic(False)  # the reply starts: it can be interrupted
                         if sentence.reply == self._reply_id and (
                                 self.state != "speaking"
                                 or self._state_interjection != sentence.wait_notice):

@@ -156,9 +156,10 @@ Avec `localive.wait_for_reply` (désactivé par défaut, réglage serveur
 `turn.wait_for_reply`), Localive ignore le micro dès qu’il valide la fin d’une demande.
 Une voix dans la pièce ne peut alors ni interrompre ni remplacer la demande pendant
 la réflexion. Une phrase d’attente (« Je cherche ça… ») garde le micro fermé. Le premier
-son de la réponse le rouvre : la personne peut ensuite la couper. Un tour terminé sans
-audio ou sur une erreur rouvre aussi le micro. L’accueil et les annonces du client ne
-ferment jamais le micro.
+son transmis de la réponse le rouvre et permet de l’interrompre. Si le modèle échoue
+ou termine sans réponse, Localive le signale à voix haute avant de réécouter. Si la
+synthèse vocale échoue aussi, le micro se rouvre à la fin du tour. L’accueil et les
+annonces du client laissent le micro ouvert.
 
 ```json
 {"type":"session.update","session":{"localive":{"wait_for_reply":true}}}

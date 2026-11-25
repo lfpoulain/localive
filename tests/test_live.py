@@ -6,6 +6,7 @@ import time
 import numpy as np
 import pytest
 
+from localive import llm as live_errors
 from localive.asr import Transcript
 from localive.config import Config
 from localive.decision import Decision
@@ -24,7 +25,6 @@ from localive.live import (
     is_goodbye,
     is_stop,
 )
-from localive import llm as live_errors
 from localive.llm import ToolCall
 from localive.vad import Segmenter
 from tests.test_vad import FIXTURES, load_16k
@@ -112,7 +112,7 @@ async def test_wait_for_reply_holds_the_microphone_until_the_reply_speaks(client
             held_during_notice = c.session._mic_held
             await c.session.on_audio(loud)  # a voice in the room while it thinks
             assert not c.session.segmenter.speaking
-        if c.session._reply_spoke:
+        if c.session._reply_spoke and not c.session._mic_held:
             break
     assert held_during_notice
     assert not c.session._mic_held  # the reply started: it can be interrupted
@@ -122,19 +122,23 @@ async def test_wait_for_reply_holds_the_microphone_until_the_reply_speaks(client
     assert len(c.chat.calls) == 1
 
 
-async def test_wait_for_reply_reopens_the_microphone_after_a_failed_turn(client):
-    c = client(script=["Bonjour."])
+@pytest.mark.parametrize("failure", ["error", "empty"])
+async def test_wait_for_reply_reopens_the_microphone_after_a_failed_turn(client, failure):
+    c = client(script=[[]])  # completed stream with neither text nor tool calls
     await c.session.start({"localive": {"wait_for_reply": True}})
 
     async def broken(*args, **kwargs):
         raise live_errors.LlmError("panne")
         yield  # pragma: no cover
 
-    c.chat.stream = broken
+    if failure == "error":
+        c.chat.stream = broken
     now = time.monotonic()
     await c.session.on_user_text("Allume la lumière.", timings={"transcript": now})
     await c.wait_turn()
     assert not c.session._mic_held
+    assert c.tts.texts == [("Je n’ai pas pu obtenir de réponse du modèle.", "female")]
+    assert c.of("voice.provider_warning")
 
 
 async def test_wait_for_reply_is_off_by_default_and_never_holds_for_an_announcement(client):
@@ -174,11 +178,15 @@ class FakeChat:
         self.calls = []
         self.delay = 0.0  # seconds before the first token ("thinking")
         self.models = []
+        self.reasoning_budgets = []
 
-    async def stream(self, messages, tools, result, max_tokens=None, model=None, url=None):
+    async def stream(self, messages, tools, result, max_tokens=None, model=None, url=None,
+                     reasoning_budget=0):
         self.models.append(model)
         if max_tokens == 1:  # prompt-cache warm-up
+            assert reasoning_budget == 0
             return
+        self.reasoning_budgets.append(reasoning_budget)
         self.calls.append((list(messages), tools))
         step = self.script.pop(0) if self.script else "D'accord."
         if self.delay:
@@ -340,6 +348,8 @@ async def test_start_announces_session_and_streams_silence(client):
 
 async def test_spoken_question_with_tool_round_trip(client):
     c = client([[ToolCall("x", "clock__read", "{}")], "Il est quatorze heures cinq."])
+    c.session.config.brain.model = "Qwen3.5-4B.gguf"
+    c.session.config.brain.reasoning_level = "low"
     await c.session.handle({"type": "session.start", "session": SESSION})
     speech = load_16k(FIXTURES / "wake_clock.wav")
     silence = np.zeros(16000, dtype=np.float32)
@@ -376,6 +386,7 @@ async def test_spoken_question_with_tool_round_trip(client):
     assert envelopes[1]["response_id"] == rid == envelopes[2]["response"]["id"]
     call_id = envelopes[1]["item"]["call_id"]
 
+    assert c.chat.reasoning_budgets == [32, 32]
     messages, tools = c.chat.calls[1]
     assert messages[-1] == {"role": "tool", "tool_call_id": call_id, "content": json.dumps(
         c.tool_answers["clock__read"])}  # fmt: skip
@@ -512,6 +523,8 @@ async def test_web_search_runs_locally_with_sources(client, monkeypatch, other_t
 
     async def fake_searxng(http, config, query):
         queries.append(query)
+        await c.session._synthesis_done([c.session._turn["notice_id"]])
+        assert c.session._mic_held
         return [
             search.Result("Coupe du monde 2027", "https://fr.wikipedia.org/wiki/x", "En Australie.")
         ]
@@ -520,11 +533,13 @@ async def test_web_search_runs_locally_with_sources(client, monkeypatch, other_t
     c = client([[ToolCall("x", "web_search", '{"query": "coupe du monde rugby 2027"}')],
                 "Elle aura lieu en Australie."])  # fmt: skip
     c.session.s.http = object()  # any client: the search itself is faked
-    await c.session.start({"tools": [{"type": "web_search"}, *other_tools]})
+    await c.session.start({"tools": [{"type": "web_search"}, *other_tools],
+                           "localive": {"wait_for_reply": True}})
     assert [t["function"]["name"] for t in c.session.tools] == [
         *(t["name"] for t in other_tools), "web_search"
     ]
-    await c.session.on_user_text("Où a lieu la coupe du monde de rugby 2027 ?")
+    await c.session.on_user_text("Où a lieu la coupe du monde de rugby 2027 ?",
+                                 timings={"transcript": time.monotonic()})
     await c.wait_turn()
     assert queries == ["coupe du monde rugby 2027"]
     kinds = [e["event"]["type"] for e in c.of("response.event")]

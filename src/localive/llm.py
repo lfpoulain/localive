@@ -51,12 +51,15 @@ class Completion:
     text: str = ""
     tool_calls: list[ToolCall] = field(default_factory=list)
     truncated: bool = False
+    exhausted_thinking: bool = False
 
 
 class ChatClient:
-    def __init__(self, http: aiohttp.ClientSession, config: LlmConfig) -> None:
+    def __init__(self, http: aiohttp.ClientSession, config: LlmConfig, *,
+                 lmstudio: bool = False) -> None:
         self.http = http
         self.config = config
+        self.lmstudio = lmstudio
         self._warned_truncation = False
 
     def _check_truncation(self, body: dict[str, Any], read: Any) -> None:
@@ -155,7 +158,7 @@ class ChatClient:
         result.truncated = done_reason not in {"stop", "tool_calls"}
         if calls and result.truncated:
             raise LlmError("LLM did not complete its tool calls")
-        if reasoned and not result.text.strip() and not calls:
+        if max_tokens != 1 and reasoned and not result.text.strip() and not calls:
             log.warning("Le modèle a réfléchi (%d caractères) sans rien répondre : augmentez "
                         "la longueur des réponses, ou n'activez pas la réflexion.",
                         reasoned)  # fmt: skip
@@ -175,6 +178,7 @@ class ChatClient:
         result: Completion,
         *,
         max_tokens: int | None = None,
+        reasoning_budget: int = 0,
         model: str | None = None,
         url: str | None = None,
     ) -> AsyncIterator[str]:
@@ -193,20 +197,42 @@ class ChatClient:
             "max_tokens": max_tokens or self.config.max_tokens,
             "cache_prompt": True,
         }
+        if reasoning_budget:
+            body["chat_template_kwargs"] = {"enable_thinking": True}
+            body["reasoning_budget_tokens"] = reasoning_budget
+            body["max_tokens"] += reasoning_budget
         if self.config.no_thinking:
             body["reasoning_effort"] = "none"  # Ollama: answer without thinking
+        if self.lmstudio and self.config.lmstudio_reasoning != "auto":
+            level = self.config.lmstudio_reasoning
+            # LM Studio's chat endpoint accepts OpenAI effort names. On toggle-only
+            # models, any positive effort enables thinking.
+            body["reasoning_effort"] = {"off": "none", "on": "medium"}.get(level, level)
         if self.config.upstream_model:  # Ollama, LM Studio...: report the prompt size read
             body["stream_options"] = {"include_usage": True}
         if tools:
             body["tools"] = tools
             body["tool_choice"] = "auto"
+        endpoint = (url or self.config.url).rstrip("/") + "/chat/completions"
+        async for text in self._chat_completion(body, endpoint, result):
+            yield text
+        if (self.lmstudio and result.exhausted_thinking and body["max_tokens"] > 1
+                and body.get("reasoning_effort") != "none"):
+            log.info("LM Studio a épuisé le budget en réflexion, nouvel essai sans réflexion.")
+            async for text in self._chat_completion({**body, "reasoning_effort": "none"},
+                                                    endpoint, result):
+                yield text
+        if self.lmstudio and result.exhausted_thinking and body["max_tokens"] > 1:
+            raise LlmError("LM Studio a épuisé la limite de génération sans produire de réponse.")
+
+    async def _chat_completion(self, body: dict, url: str,
+                               result: Completion) -> AsyncIterator[str]:
         headers = {"Authorization": f"Bearer {self.config.api_key}"} if self.config.api_key else {}
         _dump(body)
         calls: dict[int, ToolCall] = {}
         reasoned = 0
         finished = False
         finish_reason = None
-        url = (url or self.config.url).rstrip("/") + "/chat/completions"
         try:
             async with self.http.post(
                 url,
@@ -231,8 +257,10 @@ class ChatClient:
                         raise LlmError("LLM returned invalid streaming JSON") from exc
                     if not isinstance(chunk, dict):
                         raise LlmError("LLM returned an invalid streaming event")
-                    if chunk.get("error"):
-                        raise LlmError("LLM reported an error during generation")
+                    if error := chunk.get("error"):
+                        detail = error.get("message", "") if isinstance(error, dict) else error
+                        raise LlmError(
+                            f"LLM reported an error during generation: {str(detail)[:300]}")
                     if isinstance(chunk.get("usage"), dict):
                         self._check_truncation(body, chunk["usage"].get("prompt_tokens"))
                     choices = chunk.get("choices") or []
@@ -263,7 +291,9 @@ class ChatClient:
         if not finished and finish_reason is None:
             raise LlmError("LLM stream ended before completing the response")
         result.truncated = finish_reason not in {None, "tool_calls", "stop"}
-        if reasoned and not result.text.strip() and not calls:
+        thinking_only = bool(reasoned and not result.text.strip() and not calls)
+        result.exhausted_thinking = thinking_only and finish_reason == "length"
+        if body["max_tokens"] != 1 and thinking_only:
             log.warning("Le modèle a réfléchi (%d caractères) sans rien répondre : choisissez un "
                         "modèle sans réflexion, ou augmentez la longueur des réponses.", reasoned)
         if calls:
