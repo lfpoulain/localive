@@ -11,8 +11,29 @@ import tomllib
 from dataclasses import dataclass, field, fields, is_dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
+
+from . import wyoming
 
 log = logging.getLogger(__name__)
+
+VOICE_BACKENDS = ("phonon", "openai", "wyoming")
+ASR_BACKENDS = ("photon", "openai", "wyoming")
+
+
+def _validate_http_url(address: str, label: str) -> str:
+    url = address.strip().rstrip("/")
+    parsed = urlsplit(url)
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.query
+        or parsed.fragment
+        or parsed.port == 0
+    ):
+        raise ValueError(f"{label} : donnez une adresse HTTP(S) valide.")
+    return url
 
 
 @dataclass
@@ -24,6 +45,7 @@ class ServerConfig:
 
 @dataclass
 class VoiceConfig:
+    backend: str = "phonon"  # phonon | openai | wyoming
     language: str = "fr"
     default: str = "female"  # when the client does not ask for a voice: female | male
     female: str = "Ninon"  # gradium/phonon-voices catalog name or id, or a .safetensors file
@@ -35,13 +57,30 @@ class VoiceConfig:
     )
     model: str = "hf://gradium/phonon-40m-fr"  # Phonon checkpoint (gated: accept its terms)
     threads: int = 4  # Phonon CPU threads; more is slower (measured on an i9-13900K)
+    external_url: str = ""  # OpenAI/Kokoro HTTP URL or Wyoming Piper host:port
+    external_model: str = "kokoro"  # OpenAI-compatible TTS model name
+    external_female: str = ""  # voice name for external TTS (empty: server default, e.g. Piper)
+    external_male: str = ""  # voice name for external TTS (empty: server default, e.g. Piper)
+    lang_code: str = ""  # optional Kokoro-FastAPI lang_code (e.g. "f" for French)
+    speed: float = 1.0  # speech speed for OpenAI-compatible TTS
+    sample_rate: int = 24000  # PCM sample rate returned by OpenAI-compatible TTS
+    api_key: str = ""  # optional Bearer token for OpenAI-compatible TTS
+    timeout_s: float = 20.0  # timeout for external TTS requests
 
 
 @dataclass
 class AsrConfig:
+    backend: str = "photon"  # photon | openai | wyoming
     model: str = "moondream/parakeet-ultra"
     device: str = "auto"  # auto | cuda | cpu
     device_vocabulary: bool = False
+    external_url: str = ""  # Speaches/OpenAI HTTP URL or Wyoming Whisper host:port
+    external_model: str = "deepdml/faster-whisper-large-v3-turbo-ct2"
+    language: str = "fr"
+    prompt: str = ""  # optional Whisper initial prompt (OpenAI-compatible STT)
+    hotwords: str = ""  # optional Speaches / Faster-Whisper hotwords
+    api_key: str = ""  # optional Bearer token for OpenAI-compatible STT
+    timeout_s: float = 20.0  # timeout for external STT requests
 
 
 @dataclass
@@ -295,10 +334,30 @@ class Config:
             raise ValueError("routing.gpu_layers doit être compris entre -1 et 999.")
         if not 1 <= self.routing.port <= 65535 or not 0 <= self.routing.timeout_ms <= 10000:
             raise ValueError("Le port et le délai du décideur d’outils doivent être valides.")
+        if self.voice.backend not in VOICE_BACKENDS:
+            raise ValueError("voice.backend doit valoir phonon, openai ou wyoming.")
         if self.voice.default not in {"female", "male"}:
             raise ValueError("voice.default must be 'female' or 'male'")
+        if self.voice.backend == "openai":
+            _validate_http_url(self.voice.external_url, "Voix")
+            if not 0.25 <= self.voice.speed <= 4.0:
+                raise ValueError("voice.speed doit être compris entre 0,25 et 4.")
+            if not 8000 <= self.voice.sample_rate <= 48000:
+                raise ValueError("voice.sample_rate doit être compris entre 8 000 et 48 000 Hz.")
+        elif self.voice.backend == "wyoming":
+            wyoming.parse_endpoint(self.voice.external_url, "Voix")
+        if self.voice.timeout_s <= 0:
+            raise ValueError("voice.timeout_s doit être positif.")
+        if self.asr.backend not in ASR_BACKENDS:
+            raise ValueError("asr.backend doit valoir photon, openai ou wyoming.")
         if self.asr.device not in {"auto", "cuda", "cpu"}:
             raise ValueError("asr.device must be auto, cuda or cpu")
+        if self.asr.backend == "openai":
+            _validate_http_url(self.asr.external_url, "Transcription")
+        elif self.asr.backend == "wyoming":
+            wyoming.parse_endpoint(self.asr.external_url, "Transcription")
+        if self.asr.timeout_s <= 0:
+            raise ValueError("asr.timeout_s doit être positif.")
         if self.turn.threads < 1:
             raise ValueError("turn.threads must be positive")
         if self.turn.goodbye_mode not in GOODBYE_MODES:

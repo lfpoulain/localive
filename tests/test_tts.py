@@ -4,10 +4,12 @@ from contextlib import contextmanager
 
 import numpy as np
 import pytest
+from aiohttp import web
 
+from localive import wyoming
 from localive.audio import Resampler
 from localive.config import Config
-from localive.tts import BUFFER_CHUNKS, CHUNK_SAMPLES, Synthesizer, TtsError
+from localive.tts import BUFFER_CHUNKS, CHUNK_SAMPLES, TTS_RATE, Synthesizer, TtsError
 
 
 class FakeAudio:
@@ -113,3 +115,150 @@ async def test_native_error_reaches_consumer_and_releases_engine():
     await wait_for(synth._tts.closed.is_set)
     assert synth._lock.acquire(blocking=False)
     synth._lock.release()
+
+
+async def test_openai_tts_streams_pcm_with_odd_byte_boundaries():
+    seen: dict[str, object] = {}
+    pcm_samples = (np.sin(np.arange(4800, dtype=np.float32) * 0.2) * 16000).astype("<i2")
+    raw_bytes = pcm_samples.tobytes()
+
+    async def handle(request: web.Request) -> web.StreamResponse:
+        seen["auth"] = request.headers.get("Authorization")
+        seen["body"] = await request.json()
+        resp = web.StreamResponse(status=200, headers={"Content-Type": "audio/pcm"})
+        await resp.prepare(request)
+        # Split on an odd byte boundary to verify carry handling.
+        await resp.write(raw_bytes[:1001])
+        await resp.write(raw_bytes[1001:])
+        await resp.write_eof()
+        return resp
+
+    async def handle_models(_req: web.Request) -> web.Response:
+        return web.json_response({"data": []})
+
+    app = web.Application()
+    app.router.add_get("/v1/models", handle_models)
+    app.router.add_post("/v1/audio/speech", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 0)
+    await site.start()
+    port = site._server.sockets[0].getsockname()[1]
+
+    config = Config()
+    config.voice.backend = "openai"
+    config.voice.external_url = f"http://127.0.0.1:{port}"
+    config.voice.external_model = "kokoro"
+    config.voice.external_female = "ff_siwis"
+    config.voice.lang_code = "f"
+    config.voice.speed = 1.1
+    config.voice.api_key = "secret-tts"
+    synth = Synthesizer(config)
+    await synth.start()
+    try:
+        chunks = [c async for c in synth.stream("Bonjour le monde.", "female")]
+    finally:
+        await synth.aclose()
+        await runner.cleanup()
+
+    assert seen["auth"] == "Bearer secret-tts"
+    assert seen["body"] == {
+        "model": "kokoro",
+        "voice": "ff_siwis",
+        "input": "Bonjour le monde.",
+        "response_format": "pcm",
+        "stream": True,
+        "lang_code": "f",
+        "speed": 1.1,
+    }
+    output = np.concatenate(chunks)
+    np.testing.assert_allclose(output, pcm_samples.astype(np.float32) / 32768.0, atol=1e-5)
+
+
+async def test_wyoming_tts_streams_and_resamples_piper_audio():
+    seen: dict[str, object] = {}
+    samples_22k = (np.sin(np.arange(2205, dtype=np.float32) * 0.25) * 16000).astype("<i2")
+    raw = samples_22k.tobytes()
+
+    async def handle(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        try:
+            event = await wyoming.read_event(reader)
+            assert event is not None and event.type == "synthesize"
+            seen["data"] = event.data
+            fmt = {"rate": 22050, "width": 2, "channels": 1}
+            writer.write(wyoming.encode_event("audio-start", fmt))
+            writer.write(wyoming.encode_event("audio-chunk", fmt, raw[:513]))
+            writer.write(wyoming.encode_event("audio-chunk", fmt, raw[513:]))
+            writer.write(wyoming.encode_event("audio-stop"))
+            await writer.drain()
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
+    server = await asyncio.start_server(handle, "127.0.0.1", 0)
+    port = server.sockets[0].getsockname()[1]
+    config = Config()
+    config.voice.backend = "wyoming"
+    config.voice.external_url = f"tcp://127.0.0.1:{port}"
+    config.voice.external_female = "fr_FR-siwis-medium"
+    synth = Synthesizer(config)
+    await synth.start()
+    try:
+        chunks = [c async for c in synth.stream("Bonjour.", "female")]
+    finally:
+        await synth.aclose()
+        server.close()
+        await server.wait_closed()
+
+    assert seen["data"] == {"text": "Bonjour.", "voice": {"name": "fr_FR-siwis-medium"}}
+    output = np.concatenate(chunks)
+    expected = Resampler(22050, TTS_RATE)(samples_22k.astype(np.float32) / 32768.0)
+    np.testing.assert_allclose(output, expected, atol=1e-5)
+
+
+async def test_wyoming_tts_uses_server_default_voice_when_unconfigured():
+    seen: dict[str, object] = {}
+
+    async def handle(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        try:
+            event = await wyoming.read_event(reader)
+            if event is not None:
+                seen["data"] = event.data
+                fmt = {"rate": 22050, "width": 2, "channels": 1}
+                writer.write(wyoming.encode_event("audio-start", fmt))
+                writer.write(wyoming.encode_event("audio-stop"))
+                await writer.drain()
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
+    server = await asyncio.start_server(handle, "127.0.0.1", 0)
+    port = server.sockets[0].getsockname()[1]
+    config = Config()
+    config.voice.backend = "wyoming"
+    config.voice.external_url = f"127.0.0.1:{port}"
+    assert config.voice.external_female == "" and config.voice.external_male == ""
+    synth = Synthesizer(config)
+    await synth.start()
+    try:
+        assert synth.probe_error is None
+        _ = [c async for c in synth.stream("Salut.", "female")]
+    finally:
+        await synth.aclose()
+        server.close()
+        await server.wait_closed()
+
+    assert seen["data"] == {"text": "Salut."}
+
+
+async def test_external_tts_probe_reports_unreachable_server_without_blocking_startup():
+    config = Config()
+    config.voice.backend = "wyoming"
+    config.voice.external_url = "127.0.0.1:1"
+    synth = Synthesizer(config)
+    await synth.start()
+    try:
+        assert synth.probe_error is not None
+        assert "injoignable" in synth.probe_error
+    finally:
+        await synth.aclose()

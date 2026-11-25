@@ -7,16 +7,32 @@ host = "127.0.0.1"   # "0.0.0.0" pour un Cornelius sur une autre machine du rés
 port = 8787
 api_key = ""         # si renseigné : même valeur que OPENAI_API_KEY dans Cornelius
 
-[voice]              # Phonon
+[voice]              # Phonon (intégré), ou "openai" (Kokoro/Speaches) / "wyoming" (Piper)
+backend = "phonon"   # phonon | openai | wyoming
 default = "female"   # quand le client n'impose pas de voix
 female = "Ninon"     # catalogue gradium/phonon-voices, ou un fichier .safetensors
 male = "Lucien"
 wait_notice = false  # jouer une courte phrase d’attente au hasard si la réponse tarde
+# Exemple Kokoro (backend = "openai") :
+# external_url = "http://127.0.0.1:8880"
+# external_model = "kokoro"
+# external_female = "ff_siwis"  # voix féminine française
+# external_male = "ff_siwis"    # Kokoro n'a qu'une voix française par défaut ; autre ex. am_adam
+# lang_code = "f"
+# Exemple Piper (backend = "wyoming", voix vides = voix par défaut du serveur) :
+# external_url = "127.0.0.1:10200"
 
-[asr]                # Parakeet Ultra
+[asr]                # Parakeet Ultra (Photon), ou "openai" (Speaches/Whisper) / "wyoming"
+backend = "photon"   # photon | openai | wyoming
 model = "moondream/parakeet-ultra"
 device = "auto"      # auto | cuda | cpu
 device_vocabulary = false  # interpréter les noms et alias des appareils après transcription
+# Exemple Speaches (backend = "openai") :
+# external_url = "http://127.0.0.1:8000"
+# external_model = "deepdml/faster-whisper-large-v3-turbo-ct2"
+# language = "fr"
+# Exemple Wyoming Whisper (backend = "wyoming") :
+# external_url = "127.0.0.1:10300"
 
 [turn]               # fin de tour intelligente (Pipecat Smart Turn v3.2)
 enabled = true

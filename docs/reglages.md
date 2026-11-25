@@ -6,23 +6,37 @@ Tous les réglages de la page d'administration de Localive (<http://127.0.0.1:87
 
 ## Voix
 
-La voix de Cornelius, synthétisée sur le processeur par Phonon. Cornelius choisit une voix OpenAI (Cedar, Marin…) : Localive la traduit en voix masculine ou féminine.
+La voix de Cornelius : Phonon intégré (CPU), Kokoro / serveur compatible OpenAI (/v1/audio/speech) ou Piper via Wyoming. Cornelius choisit une voix OpenAI (Cedar, Marin…) : Localive la traduit en voix masculine ou féminine.
 
 | Réglage | Clé | Par défaut | Description |
 |---|---|---|---|
+| Moteur vocal | `voice.backend` | `phonon` | Phonon (par défaut) : intégré sur CPU. Compatible OpenAI : Kokoro-FastAPI ou Speaches. Wyoming : serveur Piper sur le réseau local. Choix : `phonon`, `openai`, `wyoming`. Redémarrage. |
 | Voix quand le client n'en choisit pas | `voice.default` | `female` | Les clients comme Cornelius imposent généralement la leur. Choix : `female`, `male`. |
 | Voix féminine | `voice.female` | `Ninon` | Ninon (par défaut), Tiphaine, Hélène, Noémie, Coralie, Maëlys, Orianne, Solène, Lilou… ou un fichier .safetensors. Redémarrage. |
 | Voix masculine | `voice.male` | `Lucien` | Lucien (par défaut), Arnaud, Augustin, Jules, Baptiste, Marius… Redémarrage. |
+| Adresse du serveur vocal | `voice.external_url` | *(vide)* | URL HTTP(S) pour Kokoro / OpenAI (ex. http://127.0.0.1:8880) ou hôte:port pour Wyoming Piper (ex. 127.0.0.1:10200). Redémarrage. |
+| Modèle vocal externe | `voice.external_model` | `kokoro` | Nom du modèle envoyé à /v1/audio/speech (ex. kokoro). Redémarrage. |
+| Voix féminine externe | `voice.external_female` | *(vide)* | Identifiant de voix féminine (ex. ff_siwis pour Kokoro ; laisser vide pour la voix par défaut de Piper). Redémarrage. |
+| Voix masculine externe | `voice.external_male` | *(vide)* | Identifiant de voix masculine (ex. am_adam pour Kokoro, ou ff_siwis qui est une voix féminine française ; laisser vide pour la voix par défaut de Piper). Redémarrage. |
 | Parler pendant une attente | `voice.wait_notice` | non | Après deux secondes sans réponse, la voix prononce une courte phrase. Si un outil attend encore son résultat, elle le signale. Une fois par demande. |
 | Cœurs de calcul de la voix | `voice.threads` | `4` | 4 est le plus rapide sur la plupart des processeurs ; davantage ralentit. De 1 à 32. Redémarrage. Avancé. |
 | Modèle Phonon | `voice.model` | `hf://gradium/phonon-40m-fr` | hf://gradium/phonon-40m-fr ou un dossier local. Redémarrage. Avancé. |
+| Code langue TTS (Kokoro) | `voice.lang_code` | *(vide)* | Optionnel : « f » pour le phonémiseur français de Kokoro-FastAPI. Laisser vide pour un serveur OpenAI standard. Redémarrage. Avancé. |
+| Vitesse de parole | `voice.speed` | `1.0` | 1,0 : vitesse normale. De 0.25 à 4. Avancé. |
+| Fréquence PCM du serveur vocal | `voice.sample_rate` | `24000` Hz | 24 000 Hz par défaut pour Kokoro et les serveurs OpenAI. De 8000 à 48000 Hz. Redémarrage. Avancé. |
+| Clé du serveur vocal externe | `voice.api_key` | *(secret)* | Optionnelle, si le serveur vocal demande un jeton Bearer. Redémarrage. Avancé. |
+| Délai maximal de synthèse vocale | `voice.timeout_s` | `20.0` s | De 2 à 120 s. Avancé. |
 
 ## Écoute
 
-Comment Localive entend : détection de la voix (Silero), transcription (Parakeet) et réaction quand on parle pendant que Cornelius répond.
+Comment Localive entend : détection de la voix (Silero), transcription (Parakeet, Speaches/Whisper ou Wyoming) et réaction quand on parle pendant que Cornelius répond.
 
 | Réglage | Clé | Par défaut | Description |
 |---|---|---|---|
+| Moteur de transcription | `asr.backend` | `photon` | Parakeet Ultra (Photon, par défaut), serveur compatible OpenAI (Speaches / Faster-Whisper) ou Wyoming Whisper. Choix : `photon`, `openai`, `wyoming`. Redémarrage. |
+| Adresse du serveur de transcription | `asr.external_url` | *(vide)* | URL HTTP(S) pour Speaches / OpenAI (ex. http://127.0.0.1:8000) ou hôte:port pour Wyoming Whisper (ex. 127.0.0.1:10300). Redémarrage. |
+| Modèle de transcription externe | `asr.external_model` | `deepdml/faster-whisper-large-v3-turbo-ct2` | Ex. deepdml/faster-whisper-large-v3-turbo-ct2 ou Systran/faster-whisper-large-v3. Redémarrage. |
+| Langue de transcription | `asr.language` | `fr` | Code langue ISO (fr, en…). Redémarrage. |
 | Sensibilité du micro | `vad.threshold` | `0.5` | Plus bas : capte les voix lointaines ou faibles, mais aussi plus de bruit. 0,5 convient à la plupart des pièces. De 0.2 à 0.9. |
 | Silence de fin de phrase (sans fin de tour intelligente) | `vad.silence_ms` | `600` ms | Utilisé seulement si la fin de tour intelligente est désactivée. De 250 à 2000 ms. Avancé. |
 | Parole minimale | `vad.min_speech_ms` | `160` ms | En dessous, un son est ignoré (clic, toux). Une phrase déjà transcrite est toujours gardée. De 60 à 600 ms. Avancé. |
@@ -32,6 +46,10 @@ Comment Localive entend : détection de la voix (Silero), transcription (Parakee
 | Vocabulaire des appareils après transcription | `asr.device_vocabulary` | non | Dans les nouvelles conversations, aide à reconnaître les noms et alias des appareils Home Assistant déclarés par le client. Un nom partagé demande une précision. Les sous-titres conservent les mots entendus. |
 | Processeur de la transcription | `asr.device` | `auto` | auto : la carte NVIDIA si elle est disponible, sinon le processeur. Choix : `auto`, `cuda`, `cpu`. Redémarrage. Avancé. |
 | Modèle de transcription | `asr.model` | `moondream/parakeet-ultra` | moondream/parakeet-ultra (par défaut). Redémarrage. Avancé. |
+| Contexte initial (prompt Whisper) | `asr.prompt` | *(vide)* | Optionnel : guide la ponctuation et les noms propres du foyer. Avancé. |
+| Mots-clés (hotwords Faster-Whisper) | `asr.hotwords` | *(vide)* | Optionnel : noms d'appareils ou prénoms séparés par des virgules. Avancé. |
+| Clé du serveur de transcription | `asr.api_key` | *(secret)* | Optionnelle, si le serveur STT demande un jeton Bearer. Redémarrage. Avancé. |
+| Délai maximal de transcription | `asr.timeout_s` | `20.0` s | De 2 à 120 s. Avancé. |
 
 ## Fin de tour
 
