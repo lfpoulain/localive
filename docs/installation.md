@@ -145,8 +145,7 @@ Un serveur qui reçoit uniquement de petits catalogues utilise les deux moteurs 
 (environ 7,21 Gio). Ces volumes excluent la mémoire du système et des
 services vocaux. Pour le profil complet
 sur une 890M, nous conseillons **32 Go de RAM**. Avec 16 Go partagés, la marge est
-faible. Les mesures sur Radeon du dépôt portent sur Qwen avec un HX 370. La latence
-de d3-mini sur HX 470 reste à mesurer. [Mesures matérielles](mesures.md#empreinte-du-profil-gpu-par-défaut)
+faible. [Temps de tri mesurés sur HX 470](mesures.md)
 
 Sur une machine AMD, utilisez `-Device cpu -Llama vulkan` sous Windows ou
 `--device cpu --llama vulkan` sous Linux. La transcription utilise alors le CPU et
@@ -167,7 +166,7 @@ cherchez `Radeon 890M` et `offloaded 33/33 layers to GPU` dans
 `python bench/prompts/route_tools.py --port 8085` pendant que le serveur est au repos.
 Pour mesurer l’effet du tri sur un tel catalogue, comparez également le premier audio
 avec et sans **Cerveau → Choisir les outils après la transcription**, en redémarrant
-après le changement. [Banc vocal et mesures](mesures.md#refaire-la-mesure-sur-un-hx-470)
+après le changement. [Mesurer votre installation](mesures.md#mesurer-votre-installation)
 
 ## Autres modèles de raisonnement
 
