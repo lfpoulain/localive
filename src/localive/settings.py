@@ -116,6 +116,13 @@ SECTIONS: tuple[Section, ...] = (
                 "aussi reconnaître une fin de conversation exprimée autrement. En cas de doute "
                 "ou de modèle indisponible, la conversation reste ouverte.",
                 GOODBYE_MODES, only="turn.end_on_goodbye=true"),
+        Setting("turn.wait_for_reply", "Attendre la réponse avant de réécouter",
+                "Dans les nouvelles conversations, le micro est ignoré entre la fin de votre "
+                "demande et le début de la réponse. Une voix dans la pièce ne peut alors ni "
+                "l’interrompre ni la remplacer. Une phrase d’attente (« Je cherche ça… ») "
+                "garde le micro fermé ; la réponse le rouvre, et vous pouvez l’interrompre. "
+                "Réglage par défaut : Cornelius envoie son propre choix "
+                "(Voix de Cornelius), qui le remplace."),
         Setting("turn.check_ms", "Pause avant de vérifier",
                 "Plus court : répond plus vite, mais vérifie plus souvent.", minimum=100,
                 maximum=800, step=20, unit="ms"),

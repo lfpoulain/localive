@@ -21,6 +21,7 @@ device_vocabulary = false  # interpréter les noms et alias des appareils après
 [turn]               # fin de tour intelligente (Pipecat Smart Turn v3.2)
 enabled = true
 end_on_goodbye = false  # fermer la connexion sur une formule de fin explicite
+wait_for_reply = false  # ignorer le micro de la fin de la demande au début de la réponse
 goodbye_mode = "phrases"  # "phrases" ou "d3" (décideur local), si le raccrochage est activé
 check_ms = 200       # pause après laquelle on demande « a-t-il fini ? »
 max_silence_ms = 3000  # attente maximale quand la phrase n'est pas finie

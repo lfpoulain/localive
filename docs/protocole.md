@@ -110,7 +110,7 @@ acceptée : Localive apprend l'adresse du navigateur par ses vérifications de c
 
 | Événement | Prise en charge |
 |---|---|
-| `session.start` | Consignes, voix, `delegation.responses` (consignes, outils, modèle), `welcome_message` / `welcome_instructions`, `localive.metrics`, `localive.end_on_goodbye`, `localive.goodbye_mode` |
+| `session.start` | Consignes, voix, `delegation.responses` (consignes, outils, modèle), `welcome_message` / `welcome_instructions`, `localive.metrics`, `localive.end_on_goodbye`, `localive.goodbye_mode`, `localive.wait_for_reply` |
 | `session.update` | Outils, consignes, voix, modèle de délégation et options `localive`. Confirmation `session.updated` |
 | `session.input_audio.append` | PCM16 16 kHz, blocs d'une seconde au plus (WebSocket seulement) |
 | `session.input_audio.mute` / `unmute` | Ignorer le micro ; répond `session.input_audio.muted` / `unmuted` |
@@ -150,6 +150,22 @@ réflexion, elle choisit parmi les 12 phrases mélangées pour la session. Le jo
 indique quand le premier son de l’interjection est prêt. Les mesures de premier audio
 continuent à chronométrer la réponse elle-même.
 
+### Attendre la réponse avant de réécouter
+
+Avec `localive.wait_for_reply` (désactivé par défaut, réglage serveur
+`turn.wait_for_reply`), Localive ignore le micro dès qu’il valide la fin d’une demande.
+Une voix dans la pièce ne peut alors ni interrompre ni remplacer la demande pendant
+la réflexion. Une phrase d’attente (« Je cherche ça… ») garde le micro fermé. Le premier
+son de la réponse le rouvre : la personne peut ensuite la couper. Un tour terminé sans
+audio ou sur une erreur rouvre aussi le micro. L’accueil et les annonces du client ne
+ferment jamais le micro.
+
+```json
+{"type":"session.update","session":{"localive":{"wait_for_reply":true}}}
+```
+
+Le client n’a rien à suspendre lui-même : il peut continuer d’envoyer son audio.
+
 ### Réponse vocale directe d’un outil
 
 Un module peut utiliser le résultat Cornelius habituel. Cet exemple montre le contenu
@@ -181,7 +197,7 @@ Dans `localive.turn`, `direct_tool_reply: true` indique que le second passage a 
 | `session.output_transcript.delta` | Ce qui est dit, phrase par phrase, avec `start_ms` / `end_ms` |
 | `session.delegation.created` | La réponse est confiée au moteur de raisonnement. `offset_ms` situe la délégation, `delegation.id` l’identifie et `delegation.response_id` identifie sa première réponse |
 | `response.event` | Enveloppe : `response.created`, `response.output_item.done` (`function_call`, `arguments` en chaîne JSON), `response.completed`, et pour la recherche web `response.output_item.added` / `done` (`web_search_call`), `response.web_search_call.in_progress` / `searching` / `completed`, message avec annotations `url_citation` |
-| `voice.state` | Extension Localive pour l’orbe. États `listening`, `thinking`, `speaking`. L’état `thinking` est renouvelé pendant une attente prolongée |
+| `voice.state` | Extension Localive pour l’orbe. États `listening`, `thinking`, `speaking`. L’état `thinking` est renouvelé pendant une attente prolongée. Avec `speaking`, `interjection: true` signale une phrase d’attente : la demande est toujours en cours. La réponse renvoie `speaking` avec `interjection: false` |
 | `voice.interrupted`, `voice.turn_completed` | Vider la lecture ; fin du tour |
 | `voice.provider_warning` | Problème non bloquant (outil, recherche, événement mal formé) |
 | `localive.turn` | Avec `session.localive.metrics = true`, délais en millisecondes et nombre d’outils retenus pour le tour |

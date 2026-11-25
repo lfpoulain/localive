@@ -24,6 +24,7 @@ from localive.live import (
     is_goodbye,
     is_stop,
 )
+from localive import llm as live_errors
 from localive.llm import ToolCall
 from localive.vad import Segmenter
 from tests.test_vad import FIXTURES, load_16k
@@ -88,6 +89,64 @@ async def test_wait_notice_only_during_slow_user_reply(client, monkeypatch, capl
         assert not spoken
     else:
         assert spoken == ["Voilà la réponse."]
+
+
+async def test_wait_for_reply_holds_the_microphone_until_the_reply_speaks(client, monkeypatch):
+    from localive import live
+
+    monkeypatch.setattr(live, "WAIT_NOTICE_SECONDS", .05)
+    c = client(script=["Voilà la réponse."], tts_seconds=.03)
+    c.session.config.voice.wait_notice = True
+    c.chat.delay = .40
+    await c.session.start({"localive": {"wait_for_reply": True}})
+    loud = np.sin(np.arange(16000) / 3).astype(np.float32) * .5
+    held_during_notice = False
+    now = time.monotonic()
+    await c.session.on_user_text("Quel temps fera-t-il ?", timings={
+        "speech_end": now - .3, "transcript": now,
+    })
+    assert c.session._mic_held
+    for _ in range(100):
+        await asyncio.sleep(.01)
+        if c.tts.texts and not c.session._reply_spoke:
+            held_during_notice = c.session._mic_held
+            await c.session.on_audio(loud)  # a voice in the room while it thinks
+            assert not c.session.segmenter.speaking
+        if c.session._reply_spoke:
+            break
+    assert held_during_notice
+    assert not c.session._mic_held  # the reply started: it can be interrupted
+    await c.wait_turn()
+    speaking = [e for e in c.of("voice.state") if e["state"] == "speaking"]
+    assert [e["interjection"] for e in speaking] == [True, False]
+    assert len(c.chat.calls) == 1
+
+
+async def test_wait_for_reply_reopens_the_microphone_after_a_failed_turn(client):
+    c = client(script=["Bonjour."])
+    await c.session.start({"localive": {"wait_for_reply": True}})
+
+    async def broken(*args, **kwargs):
+        raise live_errors.LlmError("panne")
+        yield  # pragma: no cover
+
+    c.chat.stream = broken
+    now = time.monotonic()
+    await c.session.on_user_text("Allume la lumière.", timings={"transcript": now})
+    await c.wait_turn()
+    assert not c.session._mic_held
+
+
+async def test_wait_for_reply_is_off_by_default_and_never_holds_for_an_announcement(client):
+    c = client(script=["Bonjour."])
+    await c.session.start({})
+    await c.session.on_user_text("Bonjour.", timings={"transcript": time.monotonic()})
+    assert not c.session._mic_held
+    await c.wait_turn()
+    await c.session.handle({"type": "session.update", "session": {"localive": {
+        "wait_for_reply": True}}})
+    await c.session.announce("L'agent a terminé.")
+    assert not c.session._mic_held
 
 
 def test_wait_notice_rotation(client, monkeypatch):

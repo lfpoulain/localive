@@ -86,6 +86,7 @@ class TurnConfig:
     enabled: bool = True
     end_on_goodbye: bool = False
     goodbye_mode: str = "phrases"
+    wait_for_reply: bool = False  # ignore the microphone from the request to the reply's voice
     model: str = "models/turn/smart-turn-v3.2-gpu.onnx"  # fp32 file; runs on the CPU (~55 ms)
     threads: int = 2  # FP32: ~32 ms on Ryzen AI 9 HX 370, without quantization quality loss
     check_ms: int = 200  # first pause long enough to ask "has the user finished?"

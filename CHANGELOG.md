@@ -1,5 +1,14 @@
 # Journal des modifications
 
+## Non publié
+
+- **Attendre la réponse avant de réécouter** (`turn.wait_for_reply`, ou
+  `localive.wait_for_reply` par session) : le micro est ignoré de la fin de la demande
+  au premier son de la réponse. Une phrase d’attente ne le rouvre pas. Un tour sans
+  audio ou en erreur le rouvre. [Protocole](docs/protocole.md#attendre-la-réponse-avant-de-réécouter)
+- `voice.state` porte `interjection` avec l’état `speaking` : `true` pour une phrase
+  d’attente, `false` pour la réponse.
+
 ## 0.3.1 — 25 novembre 2026
 
 - Le tri conjoint des outils et des adieux raccourcit les libellés des modules. Sur

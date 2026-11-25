@@ -797,6 +797,10 @@ class LiveSession:
         self.metrics = False  # opt-in: session.start {"localive": {"metrics": true}}
         self.end_on_goodbye = self.config.turn.end_on_goodbye
         self.goodbye_mode = self.config.turn.goodbye_mode
+        # Ignore the microphone from an accepted request until its reply is heard.
+        self.wait_for_reply = self.config.turn.wait_for_reply
+        self._mic_held = False
+        self._state_interjection = False  # voice.state "speaking" is a wait notice
         self._turn: dict[str, float] = {}  # timings of the current turn (monotonic seconds)
         self.base_instructions = ""
         self.delegation_instructions = ""
@@ -872,12 +876,28 @@ class LiveSession:
     def state(self) -> str:
         return self._state or "starting"
 
-    async def set_state(self, state: str) -> None:
+    async def set_state(self, state: str, *, interjection: bool = False) -> None:
         now = time.monotonic()
-        if state != self._state or (state == "thinking" and now - self._state_sent_at >= 1):
+        interjection = interjection and state == "speaking"
+        if (state != self._state or interjection != self._state_interjection
+                or (state == "thinking" and now - self._state_sent_at >= 1)):
             self._state = state
+            self._state_interjection = interjection
             self._state_sent_at = now
-            await self.send({"type": "voice.state", "state": state})
+            event: dict[str, Any] = {"type": "voice.state", "state": state}
+            if state == "speaking":
+                # A wait notice ("Je cherche ça…") is not the reply: the request is still running.
+                event["interjection"] = interjection
+            await self.send(event)
+
+    def _hold_mic(self, held: bool) -> None:
+        """wait_for_reply: from the accepted request to the reply's first audio."""
+        held = held and self.wait_for_reply
+        if held and not self._mic_held and self.segmenter and self.segmenter.speaking:
+            self.segmenter.reset()  # words begun after the request must not join or replace it
+        if held != self._mic_held:
+            log.info("%s micro %s", self.id, "en attente de la réponse" if held else "rouvert")
+        self._mic_held = held
 
     async def warn(self, code: str, message: str) -> None:
         log.warning("%s: %s", code, message)
@@ -977,6 +997,10 @@ class LiveSession:
             self.end_on_goodbye = options["end_on_goodbye"]
         if options.get("goodbye_mode") in GOODBYE_MODES:
             self.goodbye_mode = options["goodbye_mode"]
+        if isinstance(options.get("wait_for_reply"), bool):
+            self.wait_for_reply = options["wait_for_reply"]
+            if not self.wait_for_reply:
+                self._hold_mic(False)
         if "tools" in delegation or "tools" in session:
             raw = delegation.get("tools", session.get("tools"))
             if self._use_device_vocabulary:
@@ -1055,6 +1079,9 @@ class LiveSession:
         # AEC3 + Silero stay on the event loop on purpose: 0.32 ms median, 0.63 ms p99 per
         # 40 ms chunk (Ryzen AI 9 HX 370, 9 Nov 2026). A thread would race with far_end()
         # (same native APM) and with the segmenter state the other tasks read.
+        if self._mic_held:
+            # Silence, not nothing: echo cancellation and the segmenter keep their cadence.
+            samples = np.zeros_like(samples)
         clean, raw = self.echo.near_end(samples)  # clean: the assistant's own voice removed
         if not len(clean):
             return
@@ -1660,6 +1687,8 @@ class LiveSession:
         self._reply_spoke = False
         self._reply_said = ""
         self._turn_open = True
+        # Only a request heard from the user holds the microphone (not a welcome or announcement).
+        self._hold_mic(timings is not None)
         self._reply = asyncio.create_task(self._run_reply(coroutine))
 
     async def _run_reply(self, coroutine: Awaitable[None]) -> None:
@@ -1714,6 +1743,7 @@ class LiveSession:
             if (reply_done and not self.output.busy and self._synthesizing < 0
                     and time.monotonic() >= self.output.last_audible):
                 self._turn_open = False
+                self._hold_mic(False)  # no audio, an error or the end: listen again
                 timings = self._turn
                 self._duck(False)
                 await self.set_state("listening")
@@ -2282,8 +2312,11 @@ class LiveSession:
                             ready_at = self._mark("first_audio")
                             self._log_first_audio(sentence.reply, ready_at)
                             self._reply_spoke = True
-                        if sentence.reply == self._reply_id and self.state != "speaking":
-                            await self.set_state("speaking")
+                            self._hold_mic(False)  # the reply starts: it can be interrupted
+                        if sentence.reply == self._reply_id and (
+                                self.state != "speaking"
+                                or self._state_interjection != sentence.wait_notice):
+                            await self.set_state("speaking", interjection=sentence.wait_notice)
                             if sentence.dropped:
                                 break
                         self.output.push(audio, sid)
