@@ -1,0 +1,24 @@
+# Profil RTX 4090 : Qwen3.5-9B Q4_K_M pour les réponses, Qwen3-4B pour les décisions.
+# Depuis la racine, après arrêt de l'app :
+# .venv\Scripts\python.exe -m localive --config localive.qwen35-9b.toml
+# Conserve le contexte de 24k et les consignes de production.
+
+[brain]
+model = "models/Qwen3.5-9B/Qwen3.5-9B-Q4_K_M.gguf"
+llama_dir = ".runtime/llama/b11960-cuda12"
+context = 24576
+gpu_layers = 99
+# Q8 concerne le cache d'attention, pas les poids du modèle.
+# La vision est déjà absente du GGUF ; --no-mmproj évite tout chargement automatique.
+extra_args = "--flash-attn on --cache-type-k q8_0 --cache-type-v q8_0 --no-mmproj"
+
+[llm]
+model = "qwen3.5-9b"
+temperature = 0.2
+max_tokens = 400
+
+[decision]
+dedicated = true
+model = "models/Qwen3-4B-Instruct-2507/Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+llama_dir = ".runtime/llama/b11960-vulkan"
+context = 8192

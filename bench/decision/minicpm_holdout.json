@@ -1,0 +1,173 @@
+{
+  "note": "Jeu de réserve indépendant de 24 interruptions vocales en français, équilibré entre IGNORE, ADD, STOP et NEW. Les confirmations d'une étape demandées pendant un guidage relèvent de IGNORE ; une demande explicite de terminer la réponse relève de STOP.",
+  "cases": [
+    {
+      "p": "s",
+      "r": "Cornelius, comment conserver des herbes fraîches plusieurs jours au réfrigérateur ?",
+      "s": "Pour le persil, tu peux placer les tiges dans un verre avec un fond d'eau, puis couvrir les feuilles sans les écraser.",
+      "h": "Oui oui, je t'écoute.",
+      "y": "IGNORE"
+    },
+    {
+      "p": "t",
+      "r": "Cornelius, propose un endroit pratique pour ranger les chaussures dans notre petite entrée.",
+      "s": "",
+      "h": "Noé, pose ton cartable sur la chaise, s'il te plaît.",
+      "y": "IGNORE"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, donne-moi les ingrédients d'une pâte à crêpes pour deux personnes.",
+      "s": "Il te faut cent vingt-cinq grammes de farine et deux œufs.",
+      "h": "Cent vingt-cinq grammes de farine, deux œufs... je répète pour mémoriser.",
+      "y": "IGNORE"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, guide-moi étape par étape pour reconnecter mon enceinte. Attends ma confirmation à chaque étape.",
+      "s": "D'abord, branche le câble d'alimentation sur l'enceinte. Dis-moi quand c'est fait.",
+      "h": "Voilà, c'est branché.",
+      "y": "IGNORE"
+    },
+    {
+      "p": "t",
+      "r": "Cornelius, explique-moi la différence entre un aspirateur avec sac et un aspirateur sans sac.",
+      "s": "",
+      "h": "Hum... hum.",
+      "y": "IGNORE"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, explique à quoi servent les différents compartiments du bac à lessive.",
+      "s": "Le compartiment marqué deux contient la lessive du lavage principal.",
+      "h": "D'accord, continue.",
+      "y": "IGNORE"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, propose une recette de dîner végétarien avec des courgettes.",
+      "s": "Tu pourrais préparer des courgettes farcies avec du riz et des légumes.",
+      "h": "Et sans aucun fruit à coque, pour la recette.",
+      "y": "ADD"
+    },
+    {
+      "p": "t",
+      "r": "Cornelius, prépare une liste de choses à mettre dans notre valise pour un séjour à la mer.",
+      "s": "",
+      "h": "On part trois nuits, et il faut prévoir les affaires du bébé aussi.",
+      "y": "ADD"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, organise mes lessives de ce matin : draps, serviettes et vêtements fragiles.",
+      "s": "Tu peux commencer par les draps, puis lancer les serviettes pendant que les draps sèchent.",
+      "h": "Commence plutôt par les vêtements fragiles dans ton planning.",
+      "y": "ADD"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, rédige un petit mot pour prévenir nos voisins que nous ferons quelques travaux samedi.",
+      "s": "Chers voisins, nous souhaitons vous informer que nous réaliserons quelques travaux dans notre appartement ce samedi.",
+      "h": "Précise aussi dans le mot qu'on aura terminé avant midi.",
+      "y": "ADD"
+    },
+    {
+      "p": "t",
+      "r": "Cornelius, adapte cette recette prévue pour quatre personnes : deux cents grammes de semoule et quatre cents millilitres d'eau.",
+      "s": "",
+      "h": "Fais le calcul pour sept personnes.",
+      "y": "ADD"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, explique-moi comment plier un avion en papier.",
+      "s": "Plie la feuille en deux dans la longueur, déplie-la, puis rabats les deux coins du haut vers le pli central.",
+      "h": "Explique les plis plus lentement et avec des phrases plus courtes.",
+      "y": "ADD"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, explique-moi comment fonctionne le mode économique du lave-vaisselle.",
+      "s": "Ce programme utilise une température plus basse et compense par un cycle plus long.",
+      "h": "Merci, j'ai assez d'informations, tu peux t'arrêter là.",
+      "y": "STOP"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, raconte-moi l'histoire de la fourchette.",
+      "s": "La fourchette s'est imposée progressivement sur les tables européennes au fil des siècles.",
+      "h": "Cornelius, arrête de parler.",
+      "y": "STOP"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, donne-moi quelques idées pour décorer le salon avec les objets que nous avons déjà.",
+      "s": "Tu peux commencer par regrouper les petits cadres sur un seul mur et déplacer la lampe près du fauteuil.",
+      "h": "Chut, Cornelius, ne parle plus, le bébé vient de s'endormir.",
+      "y": "STOP"
+    },
+    {
+      "p": "t",
+      "r": "Cornelius, explique comment retirer une tache de café d'un tapis en laine.",
+      "s": "",
+      "h": "Ne réponds finalement pas, je préfère regarder l'étiquette d'entretien.",
+      "y": "STOP"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, décris toutes les étapes pour rempoter mon ficus.",
+      "s": "Choisis un pot un peu plus grand et vérifie qu'il possède des trous de drainage.",
+      "h": "Pas la peine de poursuivre l'explication, j'ai retrouvé la notice.",
+      "y": "STOP"
+    },
+    {
+      "p": "t",
+      "r": "Cornelius, aide-moi à calculer combien de rouleaux de papier peint acheter pour la chambre.",
+      "s": "",
+      "h": "Laisse tomber ma question sur le papier peint.",
+      "y": "STOP"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, propose une façon de répartir le ménage entre quatre colocataires.",
+      "s": "On peut faire tourner chaque semaine les tâches de cuisine, de salle de bains et de nettoyage des sols.",
+      "h": "Cornelius, quelle heure est-il ?",
+      "y": "NEW"
+    },
+    {
+      "p": "t",
+      "r": "Cornelius, trouve des idées de jeux de société pour une soirée à six.",
+      "s": "",
+      "h": "Annule le minuteur du four que j'ai lancé tout à l'heure.",
+      "y": "NEW"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, explique-moi comment entretenir ma planche à découper en bois.",
+      "s": "Lave-la rapidement à la main et laisse-la sécher debout pour que l'air circule des deux côtés.",
+      "h": "Cornelius, mets de la musique dans le salon.",
+      "y": "NEW"
+    },
+    {
+      "p": "t",
+      "r": "Cornelius, quelles plantes supporteraient bien le manque de lumière dans notre salle de bains ?",
+      "s": "",
+      "h": "Mets un réveil demain matin à six heures et demie.",
+      "y": "NEW"
+    },
+    {
+      "p": "s",
+      "r": "Cornelius, guide-moi pour ranger les câbles derrière la télévision.",
+      "s": "Commence par identifier chaque câble avec une petite étiquette à ses deux extrémités.",
+      "h": "Combien de kilomètres séparent Nantes de Bordeaux par la route ?",
+      "y": "NEW"
+    },
+    {
+      "p": "t",
+      "r": "Cornelius, comment dépoussiérer les stores sans les démonter ?",
+      "s": "",
+      "h": "Raconte une devinette pour un enfant de cinq ans.",
+      "y": "NEW"
+    }
+  ]
+}

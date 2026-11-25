@@ -1,0 +1,61 @@
+# Exemple de configuration. Le plus simple : la page d'administration (http://127.0.0.1:8787),
+# qui explique chaque réglage et écrit localive.toml. Tout réglage absent garde sa valeur par
+# défaut ; la liste complète est dans docs/reglages.md.
+
+[server]
+host = "127.0.0.1"   # "0.0.0.0" pour un Cornelius sur une autre machine du réseau
+port = 8787
+api_key = ""         # si renseigné : même valeur que OPENAI_API_KEY dans Cornelius
+
+[voice]              # Phonon
+default = "female"   # quand le client n'impose pas de voix
+female = "Ninon"     # catalogue gradium/phonon-voices, ou un fichier .safetensors
+male = "Lucien"
+wait_notice = false  # jouer une courte phrase d’attente au hasard si la réponse tarde
+
+[asr]                # Parakeet Ultra
+model = "moondream/parakeet-ultra"
+device = "auto"      # auto | cuda | cpu
+device_vocabulary = false  # interpréter les noms et alias des appareils après transcription
+
+[turn]               # fin de tour intelligente (Pipecat Smart Turn v3.2)
+enabled = true
+end_on_goodbye = false  # fermer la connexion sur une formule de fin explicite
+goodbye_mode = "phrases"  # "phrases" ou "d3" (décideur local), si le raccrochage est activé
+check_ms = 200       # pause après laquelle on demande « a-t-il fini ? »
+max_silence_ms = 3000  # attente maximale quand la phrase n'est pas finie
+over_silence_ms = 700  # pause de fin quand on parle par-dessus l'assistant
+
+[decision]           # quand on parle par-dessus : ignorer, compléter, se taire, nouvelle demande
+enabled = true
+dedicated = true     # son propre llama-server : rapide, environ 3 Go de mémoire vidéo
+assistant_name = "Cornelius"
+
+[routing]            # sélection des outils après la transcription
+# Qwen reçoit directement 0 ou 1 outil. Dès 2, le tri se déclenche à 6 outils ou à
+# 3 072 octets pour la liste complète au format JSON compact UTF-8.
+enabled = true
+model = "models/decision/vllm-d3-mini-Q8_0.gguf"
+llama_dir = ".runtime/llama/b11960-vulkan"
+gpu_layers = 99      # charge toutes les couches de d3-mini sur le GPU
+timeout_ms = 0       # délai automatique selon le temps de calcul sur cette machine
+
+[llm]                # le cerveau (ou tout serveur chat-completions : llm.url)
+model = "qwen"       # nom publié sur /v1/models
+temperature = 0.2
+max_tokens = 400
+
+[brain]              # llama-server lancé par Localive
+# Le modèle de raisonnement : n'importe quel GGUF de models/ (liste déroulante de l'admin).
+model = "models/Qwen3-4B-Instruct-2507/Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+llama_dir = ".runtime/llama/b11960-vulkan"
+context = 24576
+
+[search]             # outil web_search de l'API Live
+engine = "searxng"   # searxng | off
+managed = true       # Localive installe et lance SearXNG dans Docker
+url = "http://127.0.0.1:8888"
+
+[huggingface]
+token = ""           # mieux : variable HF_TOKEN ou `hf auth login`
+offline = false      # true une fois les modèles téléchargés

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420" width="1280" height="420" role="img" aria-labelledby="titre desc">
+  <title id="titre">Localive</title>
+  <desc id="desc">L’orbe de Cornelius traversée par une onde de voix sur un fond noir.</desc>
+  <defs>
+    <linearGradient id="fond" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1312" />
+      <stop offset="1" stop-color="#030605" />
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#38b4a0" stop-opacity="0.5" />
+      <stop offset="0.55" stop-color="#38b4a0" stop-opacity="0.1" />
+      <stop offset="1" stop-color="#38b4a0" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="orbe" cx="0.42" cy="0.34" r="0.72">
+      <stop offset="0" stop-color="#e4fbf5" />
+      <stop offset="0.28" stop-color="#9fe6d8" />
+      <stop offset="0.62" stop-color="#3fb7a3" />
+      <stop offset="1" stop-color="#0f4f45" />
+    </radialGradient>
+    <linearGradient id="irise" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7cc4ff" stop-opacity="0" />
+      <stop offset="0.2" stop-color="#7cc4ff" />
+      <stop offset="0.45" stop-color="#b39dff" />
+      <stop offset="0.7" stop-color="#ff8f7a" />
+      <stop offset="0.9" stop-color="#9fe0c0" />
+      <stop offset="1" stop-color="#9fe0c0" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="420" fill="url(#fond)" />
+  <g opacity="0.07" stroke="#eaf1ef" stroke-width="1">
+    <path d="M0 105H1280M0 210H1280M0 315H1280" />
+  </g>
+  <circle cx="330" cy="210" r="190" fill="url(#halo)" />
+  <g stroke="url(#irise)" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M70 210h40M128 210v-18M146 210v-42M164 210v-70M182 210v-34M200 210v-88M218 210v-52M236 210v-24" />
+    <path d="M128 210v18M146 210v42M164 210v70M182 210v34M200 210v88M218 210v52M236 210v24" />
+    <path d="M424 210v-24M442 210v-60M460 210v-96M478 210v-44M496 210v-72M514 210v-30M532 210v-14M550 210h40" />
+    <path d="M424 210v24M442 210v60M460 210v96M478 210v44M496 210v72M514 210v30M532 210v14" />
+  </g>
+  <circle cx="330" cy="210" r="78" fill="url(#orbe)" />
+  <ellipse cx="306" cy="180" rx="30" ry="18" fill="#ffffff" opacity="0.35" />
+  <text x="680" y="196" fill="#eaf1ef" font-family="Epilogue, 'DM Sans', system-ui, sans-serif" font-size="84" font-weight="600" letter-spacing="-1.5">Localive</text>
+  <text x="684" y="246" fill="#b5c9c5" font-family="'DM Sans', system-ui, sans-serif" font-size="27">La passerelle vocale de Cornelius.</text>
+  <text x="684" y="296" fill="#6fd1bf" font-family="'DM Mono', ui-monospace, monospace" font-size="18" letter-spacing="2">/live · WebSocket · WebRTC</text>
+</svg>

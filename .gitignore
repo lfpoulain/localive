@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.playwright-mcp/
+*.egg-info/
+dist/
+
+# Local configuration, runtimes, models and outputs
+localive.toml
+.env
+.env.*
+!.env.example
+/reponse.wav
+/reply.wav
+.runtime/
+models/
+bench/results/

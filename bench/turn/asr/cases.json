@@ -1,0 +1,126 @@
+{
+  "note": "Synthetic French speech generated with Microsoft Hortense (Windows SAPI). The six samples shared with the test suite are kept in tests/fixtures.",
+  "cases": [
+    {
+      "id": "hortense_idle_weather",
+      "file": "../../../tests/fixtures/ambient_weather.wav",
+      "text": "Quelle est la météo à Paris ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "id": "hortense_wake_calculation",
+      "file": "../../../tests/fixtures/wake_calculation.wav",
+      "text": "Cornelius, combien font sept fois six ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "id": "hortense_active_followup",
+      "file": "../../../tests/fixtures/active_followup.wav",
+      "text": "Et pour ça, ajoute deux.",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "id": "hortense_other_person",
+      "file": "../../../tests/fixtures/other_person.wav",
+      "text": "Julie, tu peux fermer la porte ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_idle_followup.wav",
+      "text": "Tu peux aussi ajouter trois.",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "id": "hortense_wake_only",
+      "file": "../../../tests/fixtures/wake_only.wav",
+      "text": "Cornelius.",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_greeting_wake.wav",
+      "text": "Bonjour Cornelius.",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "id": "hortense_wake_clock",
+      "file": "../../../tests/fixtures/wake_clock.wav",
+      "text": "Cornelius, quelle heure est-il ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_wake_help.wav",
+      "text": "Cornelius, peux-tu m'aider ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_assistant_question.wav",
+      "text": "Cornelius, peux-tu me raconter une blague très courte ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_other_question.wav",
+      "text": "Julie, peux-tu me passer le sel, s'il te plaît ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_followup.wav",
+      "text": "Et demain ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_short_reply.wav",
+      "text": "Oui, s'il te plaît.",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_other_mentions_assistant.wav",
+      "text": "Julie, je finis de parler à Cornelius et je te rejoins.",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_ambiguous.wav",
+      "text": "C'est bon.",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_other.wav",
+      "text": "Paul, ferme la porte, s'il te plaît.",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_uncertain.wav",
+      "text": "Tu peux me dire l'heure ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_bonjour.wav",
+      "text": "Bonjour, comment vas-tu ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_calcul.wav",
+      "text": "Combien font deux plus deux ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_capitale.wav",
+      "text": "Quelle est la capitale de la France ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_chat.wav",
+      "text": "Combien de pattes a un chat ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_ciel.wav",
+      "text": "Pourquoi le ciel est-il bleu ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    },
+    {
+      "file": "hortense_heure.wav",
+      "text": "Quelle heure est-il actuellement ?",
+      "voice": "Microsoft Hortense (SAPI)"
+    }
+  ]
+}

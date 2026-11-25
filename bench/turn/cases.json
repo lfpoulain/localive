@@ -1,0 +1,454 @@
+{
+ "cases": [
+  {
+   "file": "hesit_lucien_00.wav",
+   "text": "Je voudrais savoir, euh…",
+   "complete": false,
+   "kind": "hesitation"
+  },
+  {
+   "file": "hesit_hélène_01.wav",
+   "text": "Est-ce que tu pourrais, attends…",
+   "complete": false,
+   "kind": "hesitation"
+  },
+  {
+   "file": "hesit_arnaud_02.wav",
+   "text": "Mets-moi un minuteur de, euh…",
+   "complete": false,
+   "kind": "hesitation"
+  },
+  {
+   "file": "hesit_ninon_03.wav",
+   "text": "Allume la lumière de la, hmm…",
+   "complete": false,
+   "kind": "hesitation"
+  },
+  {
+   "file": "hesit_lucien_04.wav",
+   "text": "Dis-moi quel temps il fera à…",
+   "complete": false,
+   "kind": "hesitation"
+  },
+  {
+   "file": "hesit_hélène_05.wav",
+   "text": "Rappelle-moi de… euh…",
+   "complete": false,
+   "kind": "hesitation"
+  },
+  {
+   "file": "hesit_arnaud_06.wav",
+   "text": "Combien font, attends, trente-sept fois…",
+   "complete": false,
+   "kind": "hesitation"
+  },
+  {
+   "file": "hesit_ninon_07.wav",
+   "text": "Ajoute à la liste de courses du, du…",
+   "complete": false,
+   "kind": "hesitation"
+  },
+  {
+   "file": "hortense_idle_weather.wav",
+   "text": "Quelle est la météo à Paris ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_idle_weather_cut.wav",
+   "text": "Quelle est la …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_wake_calculation.wav",
+   "text": "Cornelius, combien font sept fois six ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_active_followup.wav",
+   "text": "Et pour ça, ajoute deux.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_active_followup_cut.wav",
+   "text": "Et pour …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_other_person.wav",
+   "text": "Julie, tu peux fermer la porte ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_other_person_cut.wav",
+   "text": "Julie, tu peux fermer la …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_idle_followup.wav",
+   "text": "Tu peux aussi ajouter trois.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_wake_only.wav",
+   "text": "Cornelius.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_greeting_wake.wav",
+   "text": "Bonjour Cornelius.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_wake_clock.wav",
+   "text": "Cornelius, quelle heure est-il ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_wake_clock_cut.wav",
+   "text": "Cornelius, quelle …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_wake_help.wav",
+   "text": "Cornelius, peux-tu m'aider ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_assistant_question.wav",
+   "text": "Cornelius, peux-tu me raconter une blague très courte ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_assistant_question_cut.wav",
+   "text": "Cornelius, peux-tu me …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_other_question.wav",
+   "text": "Julie, peux-tu me passer le sel, s'il te plaît ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_other_question_cut.wav",
+   "text": "Julie, peux-tu me …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_followup.wav",
+   "text": "Et demain ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_short_reply.wav",
+   "text": "Oui, s'il te plaît.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_short_reply_cut.wav",
+   "text": "Oui, s'il te …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_other_mentions_assistant.wav",
+   "text": "Julie, je finis de parler à Cornelius et je te rejoins.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_other_mentions_assistant_cut.wav",
+   "text": "Julie, je finis de parler à Cornelius et je …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_ambiguous.wav",
+   "text": "C'est bon.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_other.wav",
+   "text": "Paul, ferme la porte, s'il te plaît.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_other_cut.wav",
+   "text": "Paul, ferme la …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_uncertain.wav",
+   "text": "Tu peux me dire l'heure ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_uncertain_cut.wav",
+   "text": "Tu peux me …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_bonjour.wav",
+   "text": "Bonjour, comment vas-tu ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_calcul.wav",
+   "text": "Combien font deux plus deux ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_calcul_cut.wav",
+   "text": "Combien font 2 plus …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_capitale.wav",
+   "text": "Quelle est la capitale de la France ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_capitale_cut.wav",
+   "text": "Quelle est …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_chat.wav",
+   "text": "Combien de pattes a un chat ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_chat_cut.wav",
+   "text": "Combien de pâtes a …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_ciel.wav",
+   "text": "Pourquoi le ciel est-il bleu ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "hortense_ciel_cut.wav",
+   "text": "Pourquoi le …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "hortense_heure.wav",
+   "text": "Quelle heure est-il actuellement ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_ninon_00.wav",
+   "text": "Quelle heure est-il ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_lucien_01.wav",
+   "text": "Mets un minuteur de dix minutes pour les pâtes.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_lucien_01_cut.wav",
+   "text": "mais 1 minuteur de …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_hélène_02.wav",
+   "text": "Allume la lumière du salon.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_hélène_02_cut.wav",
+   "text": "Allume la …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_arnaud_03.wav",
+   "text": "Quel temps fera-t-il demain à Lyon ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_arnaud_03_cut.wav",
+   "text": "Quel temps fera-t-il demain à …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_ninon_04.wav",
+   "text": "Rappelle-moi d'appeler le dentiste demain matin.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_ninon_04_cut.wav",
+   "text": "Rappelle-moi d'appeler le …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_lucien_05.wav",
+   "text": "Combien font trente-sept fois douze ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_hélène_06.wav",
+   "text": "Est-ce que tu peux baisser le chauffage de la chambre ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_hélène_06_cut.wav",
+   "text": "Est-ce que …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_arnaud_07.wav",
+   "text": "Raconte-moi une blague courte.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_arnaud_07_cut.wav",
+   "text": "Raconte-moi une …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_ninon_08.wav",
+   "text": "Ajoute du lait et des œufs à la liste de courses.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_ninon_08_cut.wav",
+   "text": "Ajoute du lait et …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_lucien_09.wav",
+   "text": "Quand passe le prochain bus pour la gare ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_lucien_09_cut.wav",
+   "text": "Quand passe le prochain bus pour la …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_hélène_10.wav",
+   "text": "Ferme les volets du salon et de la cuisine.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_hélène_10_cut.wav",
+   "text": "Ferme les volets du salon et de la …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_arnaud_11.wav",
+   "text": "Qui a gagné le match de rugby hier soir ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_arnaud_11_cut.wav",
+   "text": "Qui a …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_ninon_12.wav",
+   "text": "Traduis bonne soirée en espagnol.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_ninon_12_cut.wav",
+   "text": "Traduit bonne soirée en …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_lucien_13.wav",
+   "text": "Lance la playlist du matin dans la cuisine.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_lucien_13_cut.wav",
+   "text": "Lance la …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_hélène_14.wav",
+   "text": "Je voudrais savoir si la pharmacie est ouverte dimanche.",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_hélène_14_cut.wav",
+   "text": "Je voudrais savoir si …",
+   "complete": false,
+   "kind": "cut"
+  },
+  {
+   "file": "phonon_arnaud_15.wav",
+   "text": "Tu peux me dire combien de temps il faut pour aller à Bordeaux en voiture ?",
+   "complete": true,
+   "kind": "complete"
+  },
+  {
+   "file": "phonon_arnaud_15_cut.wav",
+   "text": "Tu peux me …",
+   "complete": false,
+   "kind": "cut"
+  }
+ ]
+}

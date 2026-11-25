@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "localive"
+dynamic = ["version"]
+description = "Self-hosted voice server for Cornelius and custom Live clients over WebSocket and WebRTC"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Les Frères Poulain" }]
+requires-python = ">=3.12"
+dependencies = [
+  "aiohttp>=3.12,<4",
+  "filelock>=3",           # coordinate the installer and server when fetching d3-mini
+  "numpy>=2,<3",
+  "num2words>=0.5.14,<0.6",
+  "onnxruntime>=1.20",      # Silero VAD
+  "moondream==2.6.1",       # Photon runtime for Parakeet Ultra, CPU or CUDA
+  "ptts>=0.6,<0.7",         # Phonon TTS runtime (Rust, CPU)
+  "huggingface-hub>=0.30",
+  "livekit>=1.2,<2",        # WebRTC AudioProcessing (AEC3) for server-side echo cancellation
+  "aiortc>=1.13,<2",        # OpenAI-compatible Live WebRTC transport (Cornelius mirror)
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "pytest-asyncio>=1,<2", "ruff>=0.12"]
+
+[project.urls]
+Homepage = "https://github.com/lfpoulain/localive"
+Cornelius = "https://github.com/lfpoulain/Cornelius"
+
+[project.scripts]
+localive = "localive.__main__:main"
+
+[tool.hatch.version]
+path = "src/localive/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/localive"]
+artifacts = ["src/localive/assets/*.onnx", "src/localive/static/fonts/*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "--basetemp=.runtime/pytest"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.ruff.lint.per-file-ignores]
+"bench/**" = ["E501"]
