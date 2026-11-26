@@ -283,9 +283,9 @@ async function renderHome(version) {
       ${firstUrl ? copyAddress(liveSocketUrl(firstUrl)) : ""}
     </div>
     <div class="grid">
-      <div class="card stat"><span class="eyebrow">Écoute</span><strong>${esc(s.asr || "—")}</strong><small>transcription</small></div>
+      <div class="card stat"><span class="eyebrow">Écoute</span><strong>${esc(s.asr || "—")}</strong>${s.asr_error ? `<div class="row">${statePill(false, false, "injoignable")}</div><small>${esc(s.asr_error)}</small>` : "<small>transcription</small>"}</div>
       <div class="card stat"><span class="eyebrow">Cerveau</span><strong>${esc(s.brain_file || s.brain)}</strong><small>${esc(routerStatus(s))}</small></div>
-      <div class="card stat"><span class="eyebrow">Voix</span><strong>${esc(s.voices.female)} · ${esc(s.voices.male)}</strong><small>${esc(s.tts || "Phonon")}</small></div>
+      <div class="card stat"><span class="eyebrow">Voix</span><strong>${esc(s.voices.female)} · ${esc(s.voices.male)}</strong>${s.tts_error ? `<div class="row">${statePill(false, false, "injoignable")}</div><small>${esc(s.tts_error)}</small>` : `<small>${esc(s.tts || "Phonon")}</small>`}</div>
       <div class="card stat"><span class="eyebrow">Recherche web</span>
         <div class="row">${statePill(search.state === "ready", ["idle", "starting", "off"].includes(search.state), SEARCH_TEXT[search.state] || search.state)}</div>
         <small>${esc(search.message || "")}</small>
@@ -445,7 +445,8 @@ function valueOf(setting) {
 
 const CHOICE_LABELS = { female: "Féminine", male: "Masculine", off: "Désactivée", searxng: "SearXNG", auto: "Automatique", cuda: "NVIDIA (CUDA)", cpu: "Processeur",
   phrases: "Formules prédéfinies", d3: "Décideur local (d3-mini)",
-  localive: "Localive (llama.cpp intégré)", ollama: "Ollama", lmstudio: "LM Studio", openai: "Autre serveur compatible OpenAI" };
+  phonon: "Phonon (intégré, CPU)", photon: "Parakeet Ultra (Photon)", wyoming: "Wyoming (TCP)",
+  localive: "Localive (llama.cpp intégré)", ollama: "Ollama", lmstudio: "LM Studio", openai: "Serveur compatible OpenAI" };
 
 const choiceLabel = (setting, value) => setting.choice_labels?.[value] ?? CHOICE_LABELS[value] ?? value;
 

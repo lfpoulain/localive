@@ -220,3 +220,47 @@ def test_settings_reference_in_docs_is_up_to_date():
     doc = Path(__file__).resolve().parents[1] / "docs" / "reglages.md"
     assert doc.read_text(encoding="utf-8") == settings.reference_markdown(), (
         "docs/reglages.md est périmé : python -m localive.settings > docs/reglages.md")
+
+
+def test_asr_api_key_is_cleared_when_provider_or_url_changes(config):
+    settings.apply(
+        config,
+        {
+            "asr.backend": "openai",
+            "asr.external_url": "https://stt-one.example",
+            "asr.api_key": "secret-stt",
+        },
+    )
+    assert load_config(config.file).finalize().asr.api_key == "secret-stt"
+    # Unrelated setting keeps the saved key.
+    settings.apply(config, {"asr.language": "en"})
+    assert load_config(config.file).finalize().asr.api_key == "secret-stt"
+    # Changing the host without editing the key clears it.
+    settings.apply(config, {"asr.external_url": "https://stt-two.example"})
+    assert load_config(config.file).finalize().asr.api_key == ""
+    # Re-set and switch backend: key is cleared too.
+    settings.apply(config, {"asr.api_key": "secret-stt-2"})
+    settings.apply(config, {"asr.backend": "photon"})
+    assert load_config(config.file).finalize().asr.api_key == ""
+
+
+def test_voice_api_key_is_cleared_when_provider_or_url_changes(config):
+    settings.apply(
+        config,
+        {
+            "voice.backend": "openai",
+            "voice.external_url": "https://tts-one.example",
+            "voice.api_key": "secret-tts",
+        },
+    )
+    assert load_config(config.file).finalize().voice.api_key == "secret-tts"
+    # Unrelated setting keeps the saved key.
+    settings.apply(config, {"voice.speed": 1.1})
+    assert load_config(config.file).finalize().voice.api_key == "secret-tts"
+    # Changing the host without editing the key clears it.
+    settings.apply(config, {"voice.external_url": "https://tts-two.example"})
+    assert load_config(config.file).finalize().voice.api_key == ""
+    # Re-set and switch backend: key is cleared too.
+    settings.apply(config, {"voice.api_key": "secret-tts-2"})
+    settings.apply(config, {"voice.backend": "phonon"})
+    assert load_config(config.file).finalize().voice.api_key == ""

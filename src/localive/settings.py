@@ -19,10 +19,12 @@ from urllib.parse import urlsplit
 
 from .catalog import QWEN_4B_MTP
 from .config import (
+    ASR_BACKENDS,
     BRAIN_SERVERS,
     GOODBYE_MODES,
     LMSTUDIO_REASONING,
     REASONING_BUDGETS,
+    VOICE_BACKENDS,
     Config,
     merge,
 )
@@ -58,28 +60,77 @@ class Section:
 
 SECTIONS: tuple[Section, ...] = (
     Section("voice", "Voix", "voice", (
-        "La voix de Cornelius, synthétisée sur le processeur par Phonon. Cornelius choisit une "
-        "voix OpenAI (Cedar, Marin…) : Localive la traduit en voix masculine ou féminine."), (
+        "La voix de Cornelius : Phonon intégré (CPU), Kokoro / serveur compatible OpenAI "
+        "(/v1/audio/speech) ou Piper via Wyoming. Cornelius choisit une voix OpenAI "
+        "(Cedar, Marin…) : Localive la traduit en voix masculine ou féminine."), (
+        Setting("voice.backend", "Moteur vocal",
+                "Phonon (par défaut) : intégré sur CPU. Compatible OpenAI : Kokoro-FastAPI ou "
+                "Speaches. Wyoming : serveur Piper sur le réseau local.",
+                VOICE_BACKENDS, restart=True),
         Setting("voice.default", "Voix quand le client n'en choisit pas",
                 "Les clients comme Cornelius imposent généralement la leur.",
                 ("female", "male")),
         Setting("voice.female", "Voix féminine",
                 "Ninon (par défaut), Tiphaine, Hélène, Noémie, Coralie, Maëlys, Orianne, Solène, "
-                "Lilou… ou un fichier .safetensors.", restart=True),
+                "Lilou… ou un fichier .safetensors.", restart=True, only="voice.backend=phonon"),
         Setting("voice.male", "Voix masculine",
-                "Lucien (par défaut), Arnaud, Augustin, Jules, Baptiste, Marius…", restart=True),
+                "Lucien (par défaut), Arnaud, Augustin, Jules, Baptiste, Marius…", restart=True,
+                only="voice.backend=phonon"),
+        Setting("voice.external_url", "Adresse du serveur vocal",
+                "URL HTTP(S) pour Kokoro / OpenAI (ex. http://127.0.0.1:8880) ou hôte:port pour "
+                "Wyoming Piper (ex. 127.0.0.1:10200).", restart=True, only="voice.backend!=phonon"),
+        Setting("voice.external_model", "Modèle vocal externe",
+                "Nom du modèle envoyé à /v1/audio/speech (ex. kokoro).", restart=True,
+                only="voice.backend=openai"),
+        Setting("voice.external_female", "Voix féminine externe",
+                "Identifiant de voix féminine (ex. ff_siwis pour Kokoro ; laisser vide pour la "
+                "voix par défaut de Piper).", restart=True, only="voice.backend!=phonon"),
+        Setting("voice.external_male", "Voix masculine externe",
+                "Identifiant de voix masculine (ex. am_adam pour Kokoro, ou ff_siwis qui est une "
+                "voix féminine française ; laisser vide pour la voix par défaut de Piper).",
+                restart=True, only="voice.backend!=phonon"),
         Setting("voice.wait_notice", "Parler pendant une attente",
                 "Après deux secondes sans réponse, la voix prononce une courte phrase. "
                 "Si un outil attend encore son résultat, elle le signale. Une fois par demande."),
         Setting("voice.threads", "Cœurs de calcul de la voix",
                 "4 est le plus rapide sur la plupart des processeurs ; davantage ralentit.",
-                minimum=1, maximum=32, step=1, restart=True, advanced=True),
+                minimum=1, maximum=32, step=1, restart=True, advanced=True,
+                only="voice.backend=phonon"),
         Setting("voice.model", "Modèle Phonon",
-                "hf://gradium/phonon-40m-fr ou un dossier local.", restart=True, advanced=True),
+                "hf://gradium/phonon-40m-fr ou un dossier local.", restart=True, advanced=True,
+                only="voice.backend=phonon"),
+        Setting("voice.lang_code", "Code langue TTS (Kokoro)",
+                "Optionnel : « f » pour le phonémiseur français de Kokoro-FastAPI. Laisser vide "
+                "pour un serveur OpenAI standard.", restart=True, advanced=True,
+                only="voice.backend=openai"),
+        Setting("voice.speed", "Vitesse de parole",
+                "1,0 : vitesse normale.", minimum=0.25, maximum=4.0, step=0.05, advanced=True,
+                only="voice.backend=openai"),
+        Setting("voice.sample_rate", "Fréquence PCM du serveur vocal",
+                "24 000 Hz par défaut pour Kokoro et les serveurs OpenAI.", minimum=8000,
+                maximum=48000, step=1000, unit="Hz", restart=True, advanced=True,
+                only="voice.backend=openai"),
+        Setting("voice.api_key", "Clé du serveur vocal externe",
+                "Optionnelle, si le serveur vocal demande un jeton Bearer.", restart=True,
+                advanced=True, secret=True, only="voice.backend=openai"),
+        Setting("voice.timeout_s", "Délai maximal de synthèse vocale", minimum=2, maximum=120,
+                step=1, unit="s", advanced=True, only="voice.backend!=phonon"),
     )),
     Section("listening", "Écoute", "ear", (
-        "Comment Localive entend : détection de la voix (Silero), transcription (Parakeet) et "
-        "réaction quand on parle pendant que Cornelius répond."), (
+        "Comment Localive entend : détection de la voix (Silero), transcription (Parakeet, "
+        "Speaches/Whisper ou Wyoming) et réaction quand on parle pendant que Cornelius répond."), (
+        Setting("asr.backend", "Moteur de transcription",
+                "Parakeet Ultra (Photon, par défaut), serveur compatible OpenAI (Speaches / "
+                "Faster-Whisper) ou Wyoming Whisper.", ASR_BACKENDS, restart=True),
+        Setting("asr.external_url", "Adresse du serveur de transcription",
+                "URL HTTP(S) pour Speaches / OpenAI (ex. http://127.0.0.1:8000) ou hôte:port "
+                "pour Wyoming Whisper (ex. 127.0.0.1:10300).", restart=True,
+                only="asr.backend!=photon"),
+        Setting("asr.external_model", "Modèle de transcription externe",
+                "Ex. deepdml/faster-whisper-large-v3-turbo-ct2 ou Systran/faster-whisper-large-v3.",
+                restart=True, only="asr.backend=openai"),
+        Setting("asr.language", "Langue de transcription",
+                "Code langue ISO (fr, en…).", restart=True, only="asr.backend!=photon"),
         Setting("vad.threshold", "Sensibilité du micro",
                 "Plus bas : capte les voix lointaines ou faibles, mais aussi plus de bruit. "
                 "0,5 convient à la plupart des pièces.", minimum=0.2, maximum=0.9, step=0.05),
@@ -105,9 +156,21 @@ SECTIONS: tuple[Section, ...] = (
                 "précision. Les sous-titres conservent les mots entendus."),
         Setting("asr.device", "Processeur de la transcription",
                 "auto : la carte NVIDIA si elle est disponible, sinon le processeur.",
-                ("auto", "cuda", "cpu"), restart=True, advanced=True),
+                ("auto", "cuda", "cpu"), restart=True, advanced=True, only="asr.backend=photon"),
         Setting("asr.model", "Modèle de transcription",
-                "moondream/parakeet-ultra (par défaut).", restart=True, advanced=True),
+                "moondream/parakeet-ultra (par défaut).", restart=True, advanced=True,
+                only="asr.backend=photon"),
+        Setting("asr.prompt", "Contexte initial (prompt Whisper)",
+                "Optionnel : guide la ponctuation et les noms propres du foyer.", advanced=True,
+                only="asr.backend=openai"),
+        Setting("asr.hotwords", "Mots-clés (hotwords Faster-Whisper)",
+                "Optionnel : noms d'appareils ou prénoms séparés par des virgules.", advanced=True,
+                only="asr.backend=openai"),
+        Setting("asr.api_key", "Clé du serveur de transcription",
+                "Optionnelle, si le serveur STT demande un jeton Bearer.", restart=True,
+                advanced=True, secret=True, only="asr.backend=openai"),
+        Setting("asr.timeout_s", "Délai maximal de transcription", minimum=2, maximum=120, step=1,
+                unit="s", advanced=True, only="asr.backend!=photon"),
     )),
     Section("turn", "Fin de tour", "timer", (
         "Savoir quand vous avez fini de parler. Smart Turn écoute l'intonation à chaque pause : "
@@ -523,6 +586,19 @@ def _commit(config: Config, values: dict, updates: dict) -> dict[str, Any]:
         if (previous_backend, previous_url.rstrip("/")) != (backend, next_url.rstrip("/")):
             values["llm"].pop("api_key", None)
             updates["llm.api_key"] = ""
+    for section, default_backend in (("asr", "photon"), ("voice", "phonon")):
+        key_name = f"{section}.api_key"
+        cand_section = getattr(candidate, section)
+        if cand_section.api_key and key_name not in updates:
+            prev = config.file_values.get(section, {})
+            prev_pair = (
+                prev.get("backend", default_backend),
+                str(prev.get("external_url") or "").strip().rstrip("/"),
+            )
+            next_pair = (cand_section.backend, cand_section.external_url.strip().rstrip("/"))
+            if prev_pair != next_pair:
+                values.get(section, {}).pop("api_key", None)
+                updates[key_name] = ""
     values = {k: v for k, v in values.items() if v != {}}
     if config.file:
         path = config.file

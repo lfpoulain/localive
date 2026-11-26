@@ -152,3 +152,18 @@ def test_thinking_is_turned_off_for_ollama(tmp_path, backend, expected):
     config.decision.enabled = False
     config.finalize()
     assert config.llm.no_thinking is expected
+
+
+def test_external_asr_and_voice_backends_validate_addresses(tmp_path):
+    config = Config(root=tmp_path)
+    config.brain.managed = False
+    config.decision.enabled = False
+    config.asr.backend = "openai"
+    with pytest.raises(ValueError, match="Transcription"):
+        config.finalize()
+    config.asr.external_url = "http://127.0.0.1:10301"
+    config.voice.backend = "wyoming"
+    with pytest.raises(ValueError, match="Voix"):
+        config.finalize()
+    config.voice.external_url = "127.0.0.1:10200"
+    assert config.finalize() is config

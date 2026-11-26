@@ -288,6 +288,7 @@ class App:
         self._http: aiohttp.ClientSession | None = None
         self._boot: asyncio.Task | None = None
         self._transcriber: Transcriber | None = None
+        self._synthesizer: Synthesizer | None = None
         self.tts_label = ""
 
     # ------------------------------------------------------------ lifecycle
@@ -303,7 +304,8 @@ class App:
             self.status = "Chargement des modèles"
             hf.configure(config)
             self._transcriber = Transcriber(config)
-            synthesizer = Synthesizer(config)
+            self._synthesizer = Synthesizer(config)
+            synthesizer = self._synthesizer
             await asyncio.gather(
                 self.brain.start(http),
                 *(alt.start(http) for alt in self.alts),
@@ -470,6 +472,8 @@ class App:
         await asyncio.gather(*tasks, return_exceptions=True)
         if self._transcriber:
             await self._transcriber.aclose()
+        if self._synthesizer:
+            await self._synthesizer.aclose()
         self.brain.stop()
         if self.router_engine:
             self.router_engine.stop()
@@ -550,10 +554,20 @@ class App:
                 "error_kind": self.failure_kind or None,
                 "sessions": len(self.sessions),
                 "asr": services.transcriber.label if services else None,
+                "asr_error": services.transcriber.probe_error if services else None,
                 "tts": self.tts_label or None,
+                "tts_error": self._synthesizer.probe_error if self._synthesizer else None,
                 "voices": {
-                    "female": self.config.voice.female,
-                    "male": self.config.voice.male,
+                    "female": (
+                        self.config.voice.female
+                        if self.config.voice.backend == "phonon"
+                        else (self.config.voice.external_female or "par défaut")
+                    ),
+                    "male": (
+                        self.config.voice.male
+                        if self.config.voice.backend == "phonon"
+                        else (self.config.voice.external_male or "par défaut")
+                    ),
                     "default": self.config.voice.default,
                 },  # fmt: skip
                 "brain": self.config.llm.model,
